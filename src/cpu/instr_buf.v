@@ -1,7 +1,10 @@
-// spi_wrap.v
-// 4-bit CPU with instructions fetched from external SPI RAM
+// =======================================================================
+// Module:      Instruction Fetch Unit 
+// Project:     Tetra-SoC, by SHaRC
+// Description: Handles instruction fetching from external SPI memory.
+// =======================================================================
 
-module spi_wrap (
+module iins (
     input  wire       clk,
     input  wire       rst_n,
     input wire  [7:0] in_port,    // input port (from ui_in)
@@ -22,12 +25,12 @@ module spi_wrap (
     (*keep*) wire clk_status = clk;
 
     // CPU state / registers
-    reg [11:0] pc;              // 12-bit program counter 
-    reg [7:0] opcode_cache;
-    reg [3:0] opcode1, opcode2;
-    reg [3:0] curr_opcode;
-    reg [7:0] operand;
-    reg [7:0] cpu_out;
+    reg [11:0] pc;               // 12-bit program counter 
+    reg [7:0]  opcode_cache;
+    reg [3:0]  opcode1, opcode2;
+    reg [3:0]  curr_opcode;
+    reg [7:0]  operand;
+    reg [7:0]  cpu_out;
 
     integer i;
 
@@ -131,23 +134,5 @@ module spi_wrap (
         end
     end
 
-    always @(posedge clk_status) begin
-        if (!rst_n) begin
-           cpu_valid <= 0;
-        end 
-
-        cpu_valid <= cpu_start;
-    end
-
-    ExecutionUnit core (
-        .clk(clk_cpu),
-        .reset(!rst_n),
-        .start(cpu_start),
-        .opcode(curr_opcode),
-        .operand(in_port),
-        .cpuOut(out_port)
-    );
-
-    assign valid = cpu_valid;
-
+   
 endmodule

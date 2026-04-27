@@ -1,6 +1,9 @@
-// spi_read_byte.v
-// Read exactly one byte from 23LC512-style SPI RAM.
-// Command 0x03 + 16-bit address, then read 8 bits of data.
+// =======================================================================
+// Module:      SPI Read Byte
+// Project:     Tetra-SoC, by SHaRC
+// Description: Reads one byte from 23LC512-style SPI RAM.
+//              Uses command 0x03 + 16-bit address.
+// =======================================================================
 
 module spi_read_byte (
     input  wire        clk,
