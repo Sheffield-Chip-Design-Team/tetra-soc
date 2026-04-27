@@ -6,15 +6,16 @@
 // =======================================================================
 
 module cpu_top (
+  
   input wire clk,
   input wire rst_n
 
-  // wishbone interface for connection to system bus
+  // wishbone master interface for connection to system bus
   
 
 );
 
-  // TODO instantiate the datapath, control unit, register file, decoder, shifter, and debug modules here and connect them together.
+// TODO instantiate the datapath, control unit, register file, decoder, shifter, and debug modules here and connect them together.
 
 
 endmodule
