@@ -5,15 +5,41 @@
 //              and logic operations based on control signals.
 // =======================================================================
 
-module alu # (
-    parameter INPUT_DATA_WIDTH = 8,
-(
-
-
+module ALU(
+    input [3:0] A,       // First operand
+    input [3:0] B,       // Second operand
+    input submode,
+    input addmode,
+    input XORmode,
+    input NANDmode,
+    input GreaterThanmode,
+    input LessThanmode,
+    output reg [3:0] Result // ALU result
 );
-    localparam OUTPUT_DATA_WIDTH = INPUT_DATA_WIDTH*2;
-    // TODO add all Arithmetic and logic operations here
 
+always@(*) begin
+    if (submode) begin
+        Result <= A-B;
 
+    end else if (addmode) begin
+        Result <= A+B;
+
+    end else if (XORmode) begin
+        Result <= A^B;
+
+    end else if (NANDmode) begin
+        Result <= ~(A&B);
+
+    end else if (GreaterThanmode) begin
+        Result <= (A > B) ? 4'b0001 : 4'b0000; // 1 if A > B, else 0
+
+    end else if (LessThanmode) begin
+        Result <= (A < B) ? 4'b0001 : 4'b0000; // 1 if A < B, else 0
+
+    end else begin
+        Result <= 4'b0000; // Default case
+    end
+
+end 
 
 endmodule
