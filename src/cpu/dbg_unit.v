@@ -4,7 +4,7 @@
 // Description: Simple debug command decoder for halt, stop, and resume.
 // =======================================================================
 
-module debug (
+module dbg_unit (
   input wire       clk,
   input wire       rst_n,
 

@@ -3,7 +3,7 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 
 
-# Debug command encodings that match the localparams used inside debug.v
+# Debug command encodings that match the localparams used inside dbg_unit.v
 DBG_NOP = 0x00
 DBG_HALT = 0x01
 DBG_RESUME = 0x02
@@ -41,17 +41,17 @@ async def reset_dut(dut):
 async def send_cmd(dut, cmd):
 
     """
-    Send one debug command into debug.v
+    Send one debug command into dbg_unit.v
 
     dbg_cmd_valid is held high for one clock cycle.
-    debug.v should sample dbg_cmd on the rising clock edge and produce 
+    dbg_unit.v should sample dbg_cmd on the rising clock edge and produce 
     the corresponding one-cycle request pulse.
     """
 
     dut.dbg_cmd.value = cmd
     dut.dbg_cmd_valid.value = 1
 
-    # Command is sampled by debug.v on this rising edge
+    # Command is sampled by dbg_unit.v on this rising edge
     await RisingEdge(dut.clk)
 
     # Small delay so outputs can be checked after clock edge
@@ -106,9 +106,9 @@ async def check_one_cycle_pulse(dut, cmd, expected_signal_name):
 @cocotb.test()
 async def test_debug_command_decoder(dut):
     """
-    Unit test for debug.v.
+    Unit test for dbg_unit.v.
 
-    This test checks that debug.v correctly decodes simple debug commands:
+    This test checks that dbg_unit.v correctly decodes simple debug commands:
 
     - DBG_HALT should pulse halt_req
     - DBG_RESUME should pulse resume_req
