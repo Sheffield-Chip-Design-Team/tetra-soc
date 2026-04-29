@@ -2,77 +2,112 @@ module: wb_spi_mem_ctrl
 bus: wishbone
 description: Simple register map for sequential SPI memory block reads.
 
-register_map:
-  - address_space: 
-  
-
 registers:
-	- name: SPI_CTRL
-		source: internal
-		offset: 0x00
-		width: 8
-		access: rw
-		reset: 0x00
-		description: Control commands for transfer start/stop.
-		fields:
-			- name: START
-				bit_offset: 0
-				bit_width: 1
-				access: wo
-				pulse: true
-				description: Write 1 to start a sequential read transfer.
-			- name: STOP
-				bit_offset: 1
-				bit_width: 1
-				access: wo
-				pulse: true
-				description: Write 1 to stop an active transfer.
+  - name: SPI_CTRL
+    source: internal
+    offset: 0x00
+    width: 8
+    access: rw
+    reset: 0x02
+    description: Control commands for transfer start/stop.
+    
+    fields:
+      - name: start
+        bit_offset: 0
+        bit_width: 1
+        access: wo
+        pulse: true
+        description: "Write 1 to start a sequential read transfer."
 
-	- name: BYTE_COUNT
-		source: external
-		offset: 0x04
-		width: 8
-		access: rw
-		reset: 0x00
-		description: Number of bytes to fetch in the sequential read.
+      - name: fetch_mode
+        bit_offset: 1
+        bit_width: 1
+        access: rw
+        pulse: false
+        description: "0 = Byte Fetch, 1 = Block Fetch mode."
 
-	- name: BYTES_FETCHED
-		source: external
-		offset: 0x08
-		width: 8
-		access: ro
-		reset: 0x00
-		description: Counter of bytes fetched so far.
+  - name: SPI_STATUS
+    source: external
+    offset: 0x04
+    width: 8
+    access: ro
+    reset: 0x00
+    description: Status register for the SPI memory controller.
 
-	- name: IRQ_STATUS
-		source: internal
-		offset: 0x0C
-		width: 8
-		access: rw
-		reset: 0x00
-		description: Interrupt status flags.
-		fields:
-			- name: TRANS_DONE
-				bit_offset: 0
-				bit_width: 1
-				access: rw1c
-				description: Set when full block transfer is complete; write 1 to clear.
+    fields:
+      - name: spi_busy
+        bit_offset: 0
+        bit_width: 1
+        access: ro
+        description: "High when a transfer is in progress."
 
-	- name: IRQ_ENABLE
-		source: internal
-		offset: 0x10
-		width: 8
-		access: rw
-		reset: 0x00
-		description: Interrupt enable controls.
-		fields:
-			- name: EN
-				bit_offset: 0
-				bit_width: 1
-				access: rw
-				description: Enables IRQ outputs.
+      - name: spi_error
+        bit_offset: 1
+        bit_width: 1
+        access: ro
+        description: "High when a SPI error has occurred."
+
+  - name: MAX_FETCH_SIZE
+    source: internal
+    offset: 0x08
+    width: 8
+    access: rw
+    reset: 0xFF
+    description: Counter of bytes fetched so far.
+    fields: []
+
+  - name: BYTES_FETCHED
+    source: external
+    offset: 0x0C
+    width: 8
+    access: ro
+    reset: 0x00
+    description: Counter of bytes fetched so far.
+    fields: []
+
+  - name: IRQ_STATUS
+    source: external
+    offset: 0x10
+    width: 8
+    access: rw
+    reset: 0x00
+    description: Interrupt status flags.
+    
+    fields:
+      - name: byte_done
+        bit_offset: 0
+        bit_width: 1
+        access: rw1c
+        description: "Set when byte transfer is complete; write 1 to clear."
+      
+      - name: block_done
+        bit_offset: 1
+        bit_width: 1
+        access: rw1c
+        description: "Set when full block transfer is complete; write 1 to clear."
+
+  - name: IRQ_ENABLE
+    source: internal
+    offset: 0x14
+    width: 2
+    access: rw
+    reset: 0x00
+    description: Interrupt enable controls.
+   
+    fields:
+      - name: byte_done_en
+        bit_offset: 0
+        bit_width: 1
+        access: rw
+        description: "Enables byte done irq output."
+
+      - name: block_done_en
+        bit_offset: 1
+        bit_width: 1
+        access: rw
+        description: "Enables byte done irq output."
 
 irq:
-	name: irq
-	description: Asserted when transfer-complete interrupt is active.
-	condition: IRQ_STATUS.TRANS_DONE && IRQ_ENABLE.EN
+  name: irq
+  description: "Asserted when an interrupt is active"
+  condition: IRQ_STATUS.byte_done && IRQ_ENABLE.byte_done_en || IRQ_STATUS.block_done && IRQ_ENABLE.block_done_en
