@@ -64,17 +64,6 @@ See [Register Map Documentation](./wb_spi_regs.md) for full details.
 
 **SYS-CLOCK-004:** SPI transfer duration shall be predictable; each SPI bit requires exactly 2 clock cycles (1 for SCK low, 1 for SCK high).
 
-### 3.2 SPI Clock Timing
-
-**SPI-CLOCK-001:** A complete SPI transfer (1 byte read) shall require 8 bits × 2 phases = 16 clock cycles (read phase only, excluding command/address).
-
-**SPI-CLOCK-002:** A full sequential read transaction (command + address + data) shall require:
-- 24 bits (command + address) × 2 phases = 48 cycles (SEND phase)
-- 8 bits (data) × 2 phases = 16 cycles (RECV phase)
-- **Total: 64 clock cycles** per byte in sequential mode
-
-**SPI-CLOCK-003:** Consecutive bytes in sequential mode shall not incur additional setup cycles; the SPI core shall maintain CS_N low and transition directly from DONE state back to RECV for the next byte.
-
 ---
 
 ## 4. Reset and Initialization
@@ -122,9 +111,14 @@ See [Register Map Documentation](./wb_spi_regs.md) for full details.
 
 ### 6.1 Operating Modes
 
+![alt text](SPI_RAM_instruction_set.png)
+
+NOTE: currently: only read mode is supported (0x3)
+
 #### 6.1.1 Single Byte Fetch (Non-Sequential Mode)
 
 **MODE-SINGLE-001:** When `SPI_CTRL.fetch_mode` = 0 (Byte Fetch mode), each write to `SPI_CTRL.start` shall initiate a single 8-byte read transaction.
+
 
 **MODE-SINGLE-002:** After each byte is received, the SPI core shall:
 1. Assert `busy` ← 0
@@ -153,6 +147,9 @@ See [Register Map Documentation](./wb_spi_regs.md) for full details.
 1. Assert `spi_block_fetch_done` signal
 2. Increment the RAM address by `max_byte_count` for the next block
 3. Reset the byte counter to 0
+
+INFO: SPI Sequental read sequence:
+![alt text](SPI_RAM_sequental_read.png)
 
 ### 6.2 Command and Address Transmission
 
@@ -240,36 +237,6 @@ See [Register Map Documentation](./wb_spi_regs.md) for full details.
 **REG-005:** Writes to `IRQ_STATUS` with bits set shall clear (write-1-to-clear) the corresponding flags in the hardware-managed status register.
 
 **REG-006:** All register values shall persist across non-resetting events; only `rst_n` or explicit software writes shall change register state.
-
-### 7.3 Individual Registers
-
-**SPI_CTRL (0x00):**
-- Bit [0]: `start` (WO pulse) — write 1 to initiate an SPI transaction
-- Bit [1]: `fetch_mode` (RW) — 0 = single-byte mode, 1 = sequential block mode
-- Bits [7:2]: Reserved, read as 0
-
-**SPI_STATUS (0x04):**
-- Bit [0]: `spi_busy` (RO) — asserted while SPI transaction is in progress
-- Bit [1]: `spi_error` (RO) — reserved for future use; currently always 0
-- Bits [7:2]: Reserved, read as 0
-
-**MAX_FETCH_SIZE (0x08):**
-- Bits [7:0]: Maximum byte count for block fetch (default 0xFF)
-- Write this register to set the block size before initiating a block fetch
-
-**BYTES_FETCHED (0x0C):**
-- Bits [7:0]: Current byte count within the current block (read-only)
-- Increments after each byte is received; resets to 0 at block completion
-
-**IRQ_STATUS (0x10):**
-- Bit [0]: `byte_done` (RW1C) — asserted when any byte is received; write 1 to clear
-- Bit [1]: `block_done` (RW1C) — asserted when the last byte of a block is received; write 1 to clear
-- Bits [7:2]: Reserved, read as 0
-
-**IRQ_ENABLE (0x14):**
-- Bit [0]: `byte_done_en` (RW) — enables the byte_done interrupt output
-- Bit [1]: `block_done_en` (RW) — enables the block_done interrupt output
-- Bits [7:2]: Reserved, read as 0
 
 ### 7.4 Interrupt Logic
 
