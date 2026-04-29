@@ -45,6 +45,30 @@ For full details on:
 
 please [Read the documentation for project](docs/info.md)
 
+---
+
+## Register-map utilities
+
+YAML register maps live alongside the RTL (e.g. `src/spi/wb_spi_regs.yaml`).
+
+- Install tool deps:
+
+  ```sh
+  python3 -m pip install -r tools/requirements.txt
+  ```
+
+- Generate a readable Markdown register map:
+
+  ```sh
+  python3 tools/yaml_to_markdown_regmap.py --yaml src/spi/wb_spi_regs.yaml --out docs/wb_spi_regs.md
+  ```
+
+- Generate a Verilog register bank from YAML:
+
+  ```sh
+  python3 tools/yaml_to_verilog_regbank.py --yaml src/spi/wb_spi_regs.yaml --out src/spi/wb_spi_mem_ctrl_regs.v
+  ```
+
 
 
 Acknowledgements
