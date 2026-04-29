@@ -29,6 +29,17 @@ module spi_ram_model #(
     reg [7:0]  out_shift;
     reg [2:0]  tx_cnt;       // transmit bit counter 0..7
 
+    function [15:0] next_addr;
+        input [15:0] cur;
+        begin
+            if (cur == MEM_BYTES - 1) begin
+                next_addr = 16'd0;
+            end else begin
+                next_addr = cur + 16'd1;
+            end
+        end
+    endfunction
+
     // Receive command and address on rising edge of SCK; also reset on CS rising
     always @(posedge sck or posedge cs_n) begin
         if (cs_n) begin
@@ -72,8 +83,8 @@ module spi_ram_model #(
             if (state == ST_DATA && cmd == 8'h03) begin
                 if (tx_cnt == 3'd7) begin
                     // Completed shifting previous byte on this posedge, prepare next byte
-                    addr <= addr + 16'd1;
-                    out_shift <= mem[(addr + 16'd1) % MEM_BYTES];
+                    addr <= next_addr(addr);
+                    out_shift <= mem[next_addr(addr) % MEM_BYTES];
                     tx_cnt <= 3'd0;
                 end else begin
                     // shift out current byte (prepare next MISO value)
