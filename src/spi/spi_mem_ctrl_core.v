@@ -48,11 +48,9 @@ module spi_mem_ctrl_core(
           state     <= ST_IDLE;
           phase     <= 1'b0;
           cs_n      <= 1'b1;
-          // sck       <= 1'b0;
-          // mosi      <= 1'b0;
           busy      <= 1'b0;
-          valid      <= 1'b0;
-          // data_out  <= 8'h00;
+          valid     <= 1'b0;
+          data_out  <= 8'h00;
           shift_out <= 24'h000000;
           shift_in  <= 8'h00;
           bit_count <= 5'd0;
@@ -65,7 +63,6 @@ module spi_mem_ctrl_core(
                   busy  <= 1'b0;
                   cs_n  <= 1'b1;
                   phase <= 1'b0;
-
                   if (start) begin
                       // latch command + address
                       shift_out <= {8'h03, addr};
@@ -109,7 +106,6 @@ module spi_mem_ctrl_core(
                       phase <= 1'b0;
                       // sample MISO at rising edge
                       shift_in <= {shift_in[6:0], miso};
-
                       if (bit_count == 5'd1) begin
                           data_out <= {shift_in[6:0], miso};
                           state    <= ST_DONE;
@@ -121,17 +117,17 @@ module spi_mem_ctrl_core(
               // ------------------------------------------------------
               ST_DONE: begin  
                   if (last) begin
-                    cs_n  <= 1'b1;
+                    cs_n  <= 1'b1;     // drive cs high to end transaction
                     busy  <= 1'b0;
-                    valid  <= 1'b1; // one-cycle pulse
+                    valid  <= 1'b1;    // one-cycle pulse
                     state <= ST_IDLE;
                   end else begin
                     // prepare to receive next byte in sequential mode
-                    valid     <= 1'b1; // one-cycle pulse for this byte
+                    bit_count <= 5'd8;
+                    valid     <= 1'b1;       // one-cycle pulse for this byte
                     shift_out <= 24'h000000; // command + address already sent, just need to keep clocking
-                    bit_count <= 5'd0;
                     shift_in  <= 8'h00;
-                    cs_n      <= 1'b0; // keep cs low for sequential read
+                    cs_n      <= 1'b0;       // keep cs low for sequential read
                     busy      <= 1'b1;
                     state     <= ST_RECV;
                   end
@@ -141,7 +137,7 @@ module spi_mem_ctrl_core(
       end
   end
 
-  // datapath fsm (output to regs)
+  // drive sck and mosi based on state and phase
   always @(posedge clk_spi) begin
     if (!rst_n) begin
       sck       <= 1'b0;
