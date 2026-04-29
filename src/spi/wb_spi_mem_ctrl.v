@@ -1,11 +1,9 @@
 // =======================================================================
-// Module:      SPI Read Byte
+// Module:      SPI Memory Controller
 // Project:     Tetra-SoC, by SHaRC
 // Description: Reads one byte from 23LC512-style SPI RAM.
 //              Uses command 0x03 + 16-bit address.
 // =======================================================================
-
-// TODO: add a SPI_CTRL.mode register field
 
 module wb_spi_mem_ctrl #(
   parameter MAX_FETCH_BYTES = 256
@@ -30,7 +28,7 @@ module wb_spi_mem_ctrl #(
   input  wire        miso      // master-in
 );
 
-  localparam BYTE_COUNT_WDITH = $clog2(MAX_FETCH_BYTES);
+  localparam BYTE_COUNT_WIDTH = $clog2(MAX_FETCH_BYTES);
 
 // --------------------------------------------------------------
 // Internal signals 
@@ -47,49 +45,64 @@ module wb_spi_mem_ctrl #(
   wire                        busy;                 // set while transactions are in progress
   wire                        valid;                // 1 for one clk when data_out is valid
   wire [7:0]                  byte_out;             // received byte
-  reg  [BYTE_COUNT_WDITH-1:0] byte_count;           // number of bytes to fetch in sequential mode
+  reg  [BYTE_COUNT_WIDTH-1:0] byte_count;           // number of bytes to fetch in sequential mode  
+  reg  [BYTE_COUNT_WIDTH-1:0] next_byte_count;       // registered version of byte_count for edge detection
   reg  [15:0]                 ram_addr;             // address in external RAM
 
-  reg [BYTE_COUNT_WDITH-1:0]  max_byte_count;
+  reg [BYTE_COUNT_WIDTH-1:0]  max_byte_count;
 
 // -------------------------------------------------------------
 // Fetch Control Logic
 // -------------------------------------------------------------
 
-  // BUG why does limiting it to 4 bytes give 5 responses?
-  // BUG why does the SPI RAM model skip bytes?
+  // BUG sequential and non-sequential mode don't work as expected
 
+  always @(*) begin
+    next_byte_count = byte_count;
+    if (spi_fetch_done) begin
+      if (byte_count < max_byte_count) begin
+        next_byte_count = byte_count + 1;
+      end else begin
+        next_byte_count = {BYTE_COUNT_WIDTH{1'b0}};
+      end
+    end
+  end
+
+  always @(posedge clk ) begin
+     if (!rst_n) begin
+        byte_count <= {BYTE_COUNT_WIDTH{1'b0}};
+     end else begin
+        byte_count <= next_byte_count;
+     end
+  end
+
+  // Address and LAST signal control logic
   always @(posedge clk) begin
     if (!rst_n) begin
       ram_addr        <= 16'h0000;
-      byte_count      <= {BYTE_COUNT_WDITH{1'b0}};
       last            <= 1'b0;
     end else begin
       if (seq_mode) begin 
         if (spi_fetch_done) begin
           if (byte_count < max_byte_count-2) begin
-            byte_count  <= byte_count + 1;
             last        <= 1'b0;
           end else if (byte_count == max_byte_count-2) begin
             last        <= 1'b1;
-            byte_count  <= byte_count + 1;
           end else if (byte_count == max_byte_count-1) begin  
             last        <= 1'b0;
-            byte_count  <= byte_count + 1;
-            ram_addr    <= ram_addr + {{16-BYTE_COUNT_WDITH{1'b0}}, max_byte_count};
-          end else if (byte_count == max_byte_count) begin
-            byte_count  <= {BYTE_COUNT_WDITH{1'b0}};
+            ram_addr    <= ram_addr + {{16-BYTE_COUNT_WIDTH{1'b0}}, max_byte_count};
           end
         end
       end else begin // Not sequential mode, just single fetch
-        last          <= start_spi_fetch; //  the first is the last
         if (start_spi_fetch) begin
-          byte_count  <= byte_count + 1;
+          last        <= start_spi_fetch; //  the first is the last
           ram_addr    <= ram_addr + 1;
         end
       end
     end
   end
+
+  assign spi_block_fetch_done = (byte_count == max_byte_count) && spi_fetch_done;
 
 // -------------------------------------------------------------
 // SPI memory controller register bank
@@ -109,7 +122,7 @@ module wb_spi_mem_ctrl #(
     // Register bank interface
     // inputs
     .ext_f_SPI_STATUS_spi_busy_i          (busy),
-    .ext_f_SPI_STATUS_spi_error_i         (),  // TODO add some error reporting logic from the core
+    .ext_f_SPI_STATUS_spi_error_i         (1'b0),  // FiXME add some error reporting logic from the core
     .r_BYTES_FETCHED_i                    (byte_count),
     .ext_f_IRQ_STATUS_block_done_i        (spi_block_fetch_done),
     .ext_f_IRQ_STATUS_byte_done_i         (spi_fetch_done),
