@@ -12,7 +12,6 @@ module spi_mem_ctrl_core(
   // Control signals from regs
   input  wire [15:0] addr,       // address in external RAM
   input  wire        start,      // pulse to start transaction 
-  input  wire        seq_mode,   // 1 to keep reading sequentially after first byte
   input  wire        last,       // asserted when this is the last byte to read in sequential mode
 
   // Status back to regs
@@ -121,7 +120,7 @@ module spi_mem_ctrl_core(
               end
               // ------------------------------------------------------
               ST_DONE: begin  
-                  if (~seq_mode & !last) begin
+                  if (last) begin
                     cs_n  <= 1'b1;
                     busy  <= 1'b0;
                     valid  <= 1'b1; // one-cycle pulse

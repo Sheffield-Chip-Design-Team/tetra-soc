@@ -5,42 +5,143 @@
 //              Uses command 0x03 + 16-bit address.
 // =======================================================================
 
-module wb_spi_mem_ctrl(
+// TODO: add a SPI_CTRL.mode register field
+
+module wb_spi_mem_ctrl #(
+  parameter MAX_FETCH_BYTES = 256
+)(
+  // Clock and reset
   input  wire        clk,
   input  wire        rst_n,
 
-  // Control signals from regs
-  input  wire [15:0] addr,       // address in external RAM
-  input  wire        start,      // pulse to start transaction 
-
-  // Status back to regs
-  output reg         busy,       // set while transactions are in progress
-  output reg         valid,      // 1 for one clk when data_out is valid
-  output reg  [7:0]  data_out,   // received byte
+  // Wishbone interface
+  input  wire [4:0] wb_addr_i,
+  input  wire [7:0] wb_wdata_i,
+  input  wire       wb_we_i,
+  input  wire       wb_stb_i,
+  output reg  [7:0] wb_rdata_o,
+  output wire       wb_ack_o,
+  output wire       irq_o,
 
   // SPI signals
-  output reg         cs_n,       // active-low chip select
-  output reg         sck,        // SPI clock (mode 0)
-  output reg         mosi,       // master-out
-  input  wire        miso        // master-in
+  output reg         cs_n,     // active-low chip select
+  output reg         sck,      // SPI clock (mode 0)
+  output reg         mosi,     // master-out
+  input  wire        miso      // master-in
 );
 
-  spi_mem_ctrl_core core (
-    .clk(clk),
-    .rst_n(rst_n),
-    .addr(addr),
-    .start(start),
-    .seq_mode(1'b1),   // not sequential mode
-    .last(),       // only one byte to read
-    .busy(busy),
-    .valid(valid),
-    .data_out(data_out),
-    .cs_n(cs_n),
-    .sck(sck),
-    .mosi(mosi),
-    .miso(miso)
+  localparam BYTE_COUNT_WDITH = $clog2(MAX_FETCH_BYTES);
+
+// --------------------------------------------------------------
+// Internal signals 
+// --------------------------------------------------------------
+
+  // Control and status signals for the SPI controller core
+  wire                        start_spi_fetch;      // pulse to start transaction 
+  wire                        spi_fetch_done;       // pulse from core when byte_out is valid  
+  wire                        seq_mode;             // 1 to keep reading sequentially after first byte
+
+  reg                         spi_block_fetch_done; // set when the last byte in a block has been received, cleared by regs
+  reg                         last;                 // asserted when this is the last byte to read in sequential mode
+  
+  wire                        busy;                 // set while transactions are in progress
+  wire                        valid;                // 1 for one clk when data_out is valid
+  wire [7:0]                  byte_out;             // received byte
+  reg  [BYTE_COUNT_WDITH-1:0] byte_count;           // number of bytes to fetch in sequential mode
+  reg  [15:0]                 ram_addr;             // address in external RAM
+
+  reg [BYTE_COUNT_WDITH-1:0]  max_byte_count;
+
+// -------------------------------------------------------------
+// Fetch Control Logic
+// -------------------------------------------------------------
+
+  // BUG why does limiting it to 4 bytes give 5 responses?
+  // BUG why does the SPI RAM model skip bytes?
+
+  always @(posedge clk) begin
+    if (!rst_n) begin
+      ram_addr        <= 16'h0000;
+      byte_count      <= {BYTE_COUNT_WDITH{1'b0}};
+      last            <= 1'b0;
+    end else begin
+      if (seq_mode) begin 
+        if (spi_fetch_done) begin
+          if (byte_count < max_byte_count-2) begin
+            byte_count  <= byte_count + 1;
+            last        <= 1'b0;
+          end else if (byte_count == max_byte_count-2) begin
+            last        <= 1'b1;
+            byte_count  <= byte_count + 1;
+          end else if (byte_count == max_byte_count-1) begin  
+            last        <= 1'b0;
+            byte_count  <= byte_count + 1;
+            ram_addr    <= ram_addr + {{16-BYTE_COUNT_WDITH{1'b0}}, max_byte_count};
+          end else if (byte_count == max_byte_count) begin
+            byte_count  <= {BYTE_COUNT_WDITH{1'b0}};
+          end
+        end
+      end else begin // Not sequential mode, just single fetch
+        last          <= start_spi_fetch; //  the first is the last
+        if (start_spi_fetch) begin
+          byte_count  <= byte_count + 1;
+          ram_addr    <= ram_addr + 1;
+        end
+      end
+    end
+  end
+
+// -------------------------------------------------------------
+// SPI memory controller register bank
+// -------------------------------------------------------------
+
+  wb_spi_mem_ctrl_regs u_wb_spi_mem_ctrl_regs (
+    .clk                                  (clk),
+    .rst_n                                (rst_n),
+    // Wishbone interface
+    .wb_addr_i                            (wb_addr_i),
+    .wb_wdata_i                           (wb_wdata_i),
+    .wb_we_i                              (wb_we_i),
+    .wb_stb_i                             (wb_stb_i),
+    .wb_rdata_o                           (wb_rdata_o),
+    .wb_ack_o                             (wb_ack_o),
+    .irq_o                                (irq_o),
+    // Register bank interface
+    // inputs
+    .ext_f_SPI_STATUS_spi_busy_i          (busy),
+    .ext_f_SPI_STATUS_spi_error_i         (),  // TODO add some error reporting logic from the core
+    .r_BYTES_FETCHED_i                    (byte_count),
+    .ext_f_IRQ_STATUS_block_done_i        (spi_block_fetch_done),
+    .ext_f_IRQ_STATUS_byte_done_i         (spi_fetch_done),
+    // outputs
+    .f_SPI_CTRL_fetch_mode_o              (seq_mode),
+    .f_SPI_CTRL_start_pulse_o             (start_spi_fetch),
+    .r_MAX_FETCH_SIZE_o                   (max_byte_count),
+    .f_IRQ_ENABLE_byte_done_en_o          (),
+    .f_IRQ_ENABLE_block_done_en_o         (),
+    .ext_f_IRQ_STATUS_byte_done_clr_o     (),
+    .ext_f_IRQ_STATUS_block_done_clr_o    ()
+  );
+// -------------------------------------------------------------
+// SPI memory controller core
+// -------------------------------------------------------------
+
+  spi_mem_ctrl_core u_spi_mem_ctrl_core (
+    .clk         (clk),
+    .rst_n       (rst_n),
+    // Control signals from regs
+    .addr        (ram_addr),
+    .start       (start_spi_fetch),
+    .last        (last),
+    // Control singals back to regs
+    .busy        (busy),
+    .valid       (spi_fetch_done),
+    .data_out    (byte_out),
+    // SPI Interface
+    .cs_n        (cs_n),
+    .sck         (sck),
+    .mosi        (mosi),
+    .miso        (miso)
   );
 
-
-  // Registers
-  // create 
+endmodule
