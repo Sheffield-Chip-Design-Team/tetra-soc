@@ -17,6 +17,9 @@
  *  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+`ifndef WB_COMMON_PARAMS_VH
+`define WB_COMMON_PARAMS_VH
+
 localparam CLASSIC_CYCLE = 1'b0;
 localparam BURST_CYCLE   = 1'b1;
 
@@ -34,3 +37,5 @@ localparam [1:0]
   BTE_WRAP_4  = 2'd1,
   BTE_WRAP_8  = 2'd2,
   BTE_WRAP_16 = 2'd3;
+
+`endif

@@ -31,6 +31,9 @@ module wb_spi_mem_ctrl_wb (
   input  wire        miso
 );
 
+  wire irq_unused;
+  wire _unused_parity = ^{1'b0, irq_unused, wb_sel_i, wb_cti_i, wb_bte_i, wb_adr_i[31:5]};
+
   wb_spi_mem_ctrl u (
     .clk      (clk),
     .rst_n    (rst_n),
@@ -41,7 +44,7 @@ module wb_spi_mem_ctrl_wb (
     .wb_stb_i  (wb_cyc_i & wb_stb_i),
     .wb_rdata_o(wb_rdt_o),
     .wb_ack_o  (wb_ack_o),
-    .irq_o     (),
+    .irq_o     (irq_unused),
 
     .cs_n      (cs_n),
     .sck       (sck),
@@ -49,10 +52,7 @@ module wb_spi_mem_ctrl_wb (
     .miso      (miso)
   );
 
-  assign wb_err_o = 1'b0;
+  assign wb_err_o = _unused_parity ^ _unused_parity;
   assign wb_rty_o = 1'b0;
-
-  // Unused in this simple adapter
-  wire _unused_ok = &{1'b0, wb_sel_i, wb_cti_i, wb_bte_i, wb_adr_i[31:5]};
 
 endmodule

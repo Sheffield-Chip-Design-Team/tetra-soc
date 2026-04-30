@@ -17,6 +17,9 @@
  *  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+`ifndef WB_COMMON_VH
+`define WB_COMMON_VH
+
 `include "wb_common_params.vh"
 function get_cycle_type;
    input [2:0] cti;
@@ -63,4 +66,6 @@ function [31:0] wb_next_adr;
       wb_next_adr = adr << shift;
    end
 endfunction
+
+`endif
 

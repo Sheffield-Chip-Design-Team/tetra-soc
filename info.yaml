@@ -32,8 +32,6 @@ project:
     # - "cpu/shifter.v"
 
     # Wishbone interconnect
-    - "intercon/wb_common_params.vh"
-    - "intercon/wb_common.vh"
     - "intercon/wb8_to_wb32.v"
     # - "intercon/wb_arbiter.v"
     # - "intercon/wb_cdc.v"

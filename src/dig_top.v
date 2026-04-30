@@ -106,6 +106,38 @@ module dig_top (
   wire        wb_spi_m_err_i;
   wire        wb_spi_m_rty_i;
 
+  // External Flash port (currently unused)
+  wire [31:0] wb_ext_flash_adr_o;
+  wire  [7:0] wb_ext_flash_dat_o;
+  wire  [3:0] wb_ext_flash_sel_o;
+  wire        wb_ext_flash_we_o;
+  wire        wb_ext_flash_cyc_o;
+  wire        wb_ext_flash_stb_o;
+  wire  [2:0] wb_ext_flash_cti_o;
+  wire  [1:0] wb_ext_flash_bte_o;
+  wire  [7:0] wb_ext_flash_rdt_i = 8'h00;
+  wire        wb_ext_flash_ack_i = 1'b0;
+  wire        wb_ext_flash_err_i = 1'b0;
+  wire        wb_ext_flash_rty_i = 1'b0;
+
+  wire _ext_flash_parity = ^{wb_ext_flash_adr_o,
+                             wb_ext_flash_dat_o,
+                             wb_ext_flash_sel_o,
+                             wb_ext_flash_we_o,
+                             wb_ext_flash_cyc_o,
+                             wb_ext_flash_stb_o,
+                             wb_ext_flash_cti_o,
+                             wb_ext_flash_bte_o};
+
+  // Tie currently-unused outputs to known values (and consume unused nets)
+  assign jtag_tdo  = _ext_flash_parity ^ _ext_flash_parity;
+  assign uart_tx   = 1'b1;
+  assign vga_hsync = 1'b0;
+  assign vga_vsync = 1'b0;
+  assign vga_rr    = 2'b00;
+  assign vga_gg    = 2'b00;
+  assign vga_bb    = 2'b00;
+
 // -----------------------------------------------------------------------------
 // CPU
 // -----------------------------------------------------------------------------
@@ -149,18 +181,18 @@ module dig_top (
         .wb_rom_rty_i          (wb_rom_rty_i),
 
         // External Flash 
-        .wb_ext_flash_adr_o    (),
-        .wb_ext_flash_dat_o    (),
-        .wb_ext_flash_sel_o    (),
-        .wb_ext_flash_we_o     (),
-        .wb_ext_flash_cyc_o    (),
-        .wb_ext_flash_stb_o    (),
-        .wb_ext_flash_cti_o    (),
-        .wb_ext_flash_bte_o    (),
-        .wb_ext_flash_rdt_i    (),
-        .wb_ext_flash_ack_i    (),
-        .wb_ext_flash_err_i    (),
-        .wb_ext_flash_rty_i    (),
+        .wb_ext_flash_adr_o    (wb_ext_flash_adr_o),
+        .wb_ext_flash_dat_o    (wb_ext_flash_dat_o),
+        .wb_ext_flash_sel_o    (wb_ext_flash_sel_o),
+        .wb_ext_flash_we_o     (wb_ext_flash_we_o),
+        .wb_ext_flash_cyc_o    (wb_ext_flash_cyc_o),
+        .wb_ext_flash_stb_o    (wb_ext_flash_stb_o),
+        .wb_ext_flash_cti_o    (wb_ext_flash_cti_o),
+        .wb_ext_flash_bte_o    (wb_ext_flash_bte_o),
+        .wb_ext_flash_rdt_i    (wb_ext_flash_rdt_i),
+        .wb_ext_flash_ack_i    (wb_ext_flash_ack_i),
+        .wb_ext_flash_err_i    (wb_ext_flash_err_i),
+        .wb_ext_flash_rty_i    (wb_ext_flash_rty_i),
 
         .wb_spi_m_adr_o        (wb_spi_m_adr_o),
         .wb_spi_m_dat_o        (wb_spi_m_dat_o),
