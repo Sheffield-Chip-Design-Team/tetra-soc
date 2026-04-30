@@ -38,7 +38,7 @@ project:
     - "intercon/wb_data_resize.v"
     - "intercon/wb_intercon.v"
     - "intercon/wb_mux.v"
-    - "intercon/wb_upsizer.v"
+    # - "intercon/wb_upsizer.v"
     - "intercon/intercon_ss.v"
 
     # SPI
