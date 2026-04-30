@@ -55,7 +55,7 @@ async def test_configure_and_start_spi_read(dut):
     await wb_write(dut, IRQ_EN, 0x03)
 
     # configure block fetch mode + start transfer
-    await wb_write(dut, SPI_CRTL, 0x1)
+    await wb_write(dut, SPI_CRTL, 0x3)
 
     for _ in range(600):
         await RisingEdge(dut.clk)

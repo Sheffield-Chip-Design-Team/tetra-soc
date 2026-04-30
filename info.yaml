@@ -3,7 +3,7 @@ project:
   title:        "Tetra-SOC"   # Project title
   author:       "SHaRC"      # Your name
   discord:      "Enjimneering"      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  "A 4-bit CPU using the SPI Flash RAM from the QSPI PMOD to load programs."      # One line description of what your project does
+  description:  "A 4-bit SoC using the SPI Flash RAM from the QSPI PMOD to load programs."      # One line description of what your project does
   language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
   clock_hz:     30000000     # Clock frequency in Hz (or 0 if not applicable)
 
@@ -11,20 +11,61 @@ project:
   tiles: "4x2"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 3x4 or 4x4
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
-  top_module:  "tt_um_spi_cpu_top"
+  top_module:  "tt_um_tetra_soc"
 
   # List your project's source files here.
   # Source files must be in ./src and you must list each source file separately, one per line.
   # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
   source_files:
-    - "tt_um_spi_cpu.v"
-    - "spi_wrap.v"
-    - "Control.v"
-    - "spi_read_byte.v"
-    - "Registers.v"
-    - "ALU.v"
-    - "cpu.v"
-    # - "spi_ram_model.v"
+    - "tt_um_tetra_soc.v"
+    - "dig_top.v"
+
+    # CPU
+    # - "cpu/alu.v"
+    # - "cpu/control_unit.v"
+    # - "cpu/cpu_top.v"
+    # - "cpu/datapath.v"
+    # - "cpu/debug.v"
+    # - "cpu/decoder.v"
+    # - "cpu/instr_buf.v"
+    # - "cpu/reg_file.v"
+    # - "cpu/shifter.v"
+
+    # Wishbone interconnect
+    - "intercon/wb_common_params.vh"
+    - "intercon/wb_common.vh"
+    - "intercon/wb8_to_wb32.v"
+    # - "intercon/wb_arbiter.v"
+    # - "intercon/wb_cdc.v"
+    - "intercon/wb_data_resize.v"
+    - "intercon/wb_intercon.v"
+    - "intercon/wb_mux.v"
+    - "intercon/wb_upsizer.v"
+    - "intercon/intercon_ss.v"
+
+    # SPI
+    - "spi/spi_mem_ctrl_core.v"
+    - "spi/wb_spi_mem_ctrl_regs.v"
+    - "spi/wb_spi_mem_ctrl.v"
+    - "spi/wb_spi_m_top.v"
+
+    # UART
+    # - "uart/wb_uart.v"
+
+    # # Memory
+    # - "mem/sram_1rw.v"
+    # - "mem/wb_ram_ctrl.v"
+
+    # # DMA / IRQ
+    # - "dma/wb_dma.v"
+    # - "irq/irq.v"
+
+    # # GPU
+    # - "gpu/vga_sync.v"
+    # - "gpu/wb_gpu.v"
+
+    # # Crypto
+    # - "crypto/wb_ascon.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
