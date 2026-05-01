@@ -42,4 +42,8 @@ TOPLEVEL = alu_wtb
 COCOTB_TEST_MODULES = test_alu
 
 # include cocotb's make rules to take care of the simulator setup
+<<<<<<< HEAD
 include $(shell cocotb-config --makefiles)/Makefile.sim
+=======
+include $(shell cocotb-config --makefiles)/Makefile.sim
+>>>>>>> dev

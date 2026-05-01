@@ -1,6 +1,6 @@
 // =======================================================================
-// Module:      AES Controller
+// Module:      ASCON Accelerator
 // Project:     Tetra-SoC, by SHaRC
-// Description: Controller for AES encryption/decryption operations.
+// Description: Accelerator for ASCON encryption/decryption operations.
 // =======================================================================
 

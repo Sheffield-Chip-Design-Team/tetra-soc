@@ -4,7 +4,7 @@
 // Description: Handles instruction fetching from external SPI memory.
 // =======================================================================
 
-module iins (
+module instr_buf (
     input  wire       clk,
     input  wire       rst_n,
     input wire  [7:0] in_port,    // input port (from ui_in)

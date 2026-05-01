@@ -16,3 +16,13 @@ I'm optimistic despite the tight deadline, this CPU will definitely need lots of
 James 
 - Its my birthday! You know what that means... more SoC development, YAY!
 - spoke to Matt (DSP Hardware) and Tristan (Debug module)
+- started writnig a script to generate register maps
+- Reviwed the ALU
+- Started desinging the SPI peripheral
+
+28-04-26 Day 2
+James
+- Started SPI module testing.
+- Helped Tristan with the debug module.
+- Reviewed progress and tidied up integration details.
+- Found bugs with the old SPI RAM model ?

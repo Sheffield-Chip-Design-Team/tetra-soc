@@ -1,200 +1,171 @@
 // =======================================================================
-// Module:      SPI Read Byte
+// Module:      SPI Memory Controller
 // Project:     Tetra-SoC, by SHaRC
 // Description: Reads one byte from 23LC512-style SPI RAM.
 //              Uses command 0x03 + 16-bit address.
 // =======================================================================
 
-module spi_read_byte (
-    input  wire        clk,
-    input  wire        rst_n,
+module wb_spi_mem_ctrl #(
+  parameter MAX_FETCH_BYTES = 256
+)(
+  // Clock and reset
+  input  wire        clk,
+  input  wire        rst_n,
 
-    // Control from CPU
-    input  wire        start,      // pulse / level, ignored when busy
-    input  wire [15:0] addr,       // address in external RAM
+  // Wishbone interface
+  input  wire [4:0] wb_addr_i,
+  input  wire [7:0] wb_wdata_i,
+  input  wire       wb_we_i,
+  input  wire       wb_stb_i,
+  output reg  [7:0] wb_rdata_o,
+  output wire       wb_ack_o,
+  output wire       irq_o,
 
-    // Status back to CPU
-    output reg         busy,       // 1 while transaction in progress
-    output reg         done,       // 1 for one clk when data_out is valid
-    output reg  [7:0]  data_out,   // received byte
-
-    // SPI signals
-    output reg         cs_n,       // active-low chip select
-    output reg         sck,        // SPI clock (mode 0)
-    output reg         mosi,       // master-out
-    input  wire        miso        // master-in
+  // SPI signals
+  output reg         cs_n,     // active-low chip select
+  output reg         sck,      // SPI clock (mode 0)
+  output reg         mosi,     // master-out
+  input  wire        miso      // master-in
 );
 
-    // States
-    localparam ST_IDLE  = 2'd0;
-    localparam ST_SEND  = 2'd1;
-    localparam ST_RECV  = 2'd2;
-    localparam ST_DONE  = 2'd3;
+  localparam BYTE_COUNT_WIDTH = $clog2(MAX_FETCH_BYTES);
 
-    reg [1:0]  state;
-    reg        phase;          // 0: SCK low phase, 1: SCK high phase
+// --------------------------------------------------------------
+// Internal signals 
+// --------------------------------------------------------------
 
-    reg [23:0] shift_out;      // 0x03 + addr[15:0]
-    reg [7:0]  shift_in;       // incoming byte
-    reg [4:0]  bit_count;      // fits 24 or 8
+  // Control and status signals for the SPI controller core
+  wire                        start_spi_fetch;      // pulse to start transaction 
+  wire                        spi_fetch_done;       // pulse from core when byte_out is valid  
+  wire                        seq_mode;             // 1 to keep reading sequentially after first byte
 
-    (*keep*) wire clk_buf = clk;
+  reg                         spi_block_fetch_done; // set when the last byte in a block has been received, cleared by regs
+  reg                         last;                 // asserted when this is the last byte to read in sequential mode
+  
+  wire                        busy;                 // set while transactions are in progress
+  wire                        valid;                // 1 for one clk when data_out is valid
+  wire [7:0]                  byte_out;             // received byte
+  reg  [BYTE_COUNT_WIDTH-1:0] byte_count;           // number of bytes to fetch in sequential mode  
+  reg  [BYTE_COUNT_WIDTH-1:0] next_byte_count;       // registered version of byte_count for edge detection
+  reg  [15:0]                 ram_addr;             // address in external RAM
 
-    // control fsm
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            state     <= ST_IDLE;
-            phase     <= 1'b0;
-            cs_n      <= 1'b1;
-            // sck       <= 1'b0;
-            // mosi      <= 1'b0;
-            busy      <= 1'b0;
-            done      <= 1'b0;
-            // data_out  <= 8'h00;
-            shift_out <= 24'h000000;
-            shift_in  <= 8'h00;
-            bit_count <= 5'd0;
-        end else begin
-            // default
-            done <= 1'b0;
+  reg [BYTE_COUNT_WIDTH-1:0]  max_byte_count;
 
-            case (state)
-                // ------------------------------------------------------
-                ST_IDLE: begin
-                    busy  <= 1'b0;
-                    cs_n  <= 1'b1;
-                    // sck   <= 1'b0;
-                    phase <= 1'b0;
+  // Currently-unused IRQ enable/clear outputs from the regbank: keep connected for completeness,
+  // but consume them in a no-op expression to satisfy strict lint.
+  wire irq_byte_done_en_unused;
+  wire irq_block_done_en_unused;
+  wire irq_byte_done_clr_unused;
+  wire irq_block_done_clr_unused;
+  wire _irq_unused_consume = irq_byte_done_en_unused ^
+                             irq_block_done_en_unused ^
+                             irq_byte_done_clr_unused ^
+                             irq_block_done_clr_unused;
 
-                    if (start) begin
-                        // latch command + address
-                        shift_out <= {8'h03, addr};
-                        bit_count <= 5'd24;
-                        shift_in  <= 8'h00;
-                        cs_n      <= 1'b0;
-                        busy      <= 1'b1;
-                        state     <= ST_SEND;
-                    end
-                end
+// -------------------------------------------------------------
+// Fetch Control Logic
+// -------------------------------------------------------------
 
-                // ------------------------------------------------------
-                // Send 24 bits: command + address, MSB first
-                // phase 0: SCK low, drive MOSI
-                // phase 1: SCK high, then shift
-                // ------------------------------------------------------
-                ST_SEND: begin
-                    if (phase == 1'b0) begin
-                        // low phase
-                        //sck  <= 1'b0;
-                        //mosi <= shift_out[23];
-                        phase <= 1'b1;
-                    end else begin
-                        // high phase
-                        //sck   <= 1'b1;
-                        phase <= 1'b0;
+  // BUG sequential and non-sequential mode don't work as expected
 
-                        shift_out <= {shift_out[22:0], 1'b0};
-
-                        if (bit_count == 5'd1) begin
-                            // last bit just sent
-                            bit_count <= 5'd8; // prepare to receive 8 bits
-                            state     <= ST_RECV;
-                        end else begin
-                            bit_count <= bit_count - 5'd1;
-                        end
-                    end
-                end
-
-                // ------------------------------------------------------
-                // Receive 8 bits on MISO
-                // phase 0: SCK low
-                // phase 1: SCK high, sample MISO
-                // ------------------------------------------------------
-                ST_RECV: begin
-                    if (phase == 1'b0) begin
-                        //sck   <= 1'b0;
-                        // mosi  <= 1'b0;  // don't care
-                        phase <= 1'b1;
-                    end else begin
-                        //sck   <= 1'b1;
-                        phase <= 1'b0;
-
-                        // sample MISO at rising edge
-                        shift_in <= {shift_in[6:0], miso};
-
-                        if (bit_count == 5'd1) begin
-                            data_out <= {shift_in[6:0], miso};
-                            state    <= ST_DONE;
-                        end else begin
-                            bit_count <= bit_count - 5'd1;
-                        end
-                    end
-                end
-
-                // ------------------------------------------------------
-                ST_DONE: begin
-                    cs_n  <= 1'b1;
-                    busy  <= 1'b0;
-                    done  <= 1'b1; // one-cycle pulse
-                    state <= ST_IDLE;
-                end
-
-                default: state <= ST_IDLE;
-            endcase
-        end
+  always @(*) begin
+    next_byte_count = byte_count ^ {BYTE_COUNT_WIDTH{_irq_unused_consume & 1'b0}};
+    if (spi_fetch_done) begin
+      if (byte_count < max_byte_count) begin
+        next_byte_count = byte_count + 1;
+      end else begin
+        next_byte_count = {BYTE_COUNT_WIDTH{1'b0}};
+      end
     end
+  end
 
-    // datapath fsm
-     always @(posedge clk_buf) begin
-        if (!rst_n) begin
-            sck       <= 1'b0;
-            mosi      <= 1'b0;
-            // data_out  <= 8'h00; 
-        end else begin
+  always @(posedge clk ) begin
+     if (!rst_n) begin
+        byte_count <= {BYTE_COUNT_WIDTH{1'b0}};
+     end else begin
+        byte_count <= next_byte_count;
+     end
+  end
 
-            case (state)
-                // ------------------------------------------------------
-                ST_IDLE: begin
-                    sck   <= 1'b0;
-                end
-
-                // ------------------------------------------------------
-                // Send 24 bits: command + address, MSB first
-                // phase 0: SCK low, drive MOSI
-                // phase 1: SCK high, then shift
-                // ------------------------------------------------------
-                ST_SEND: begin
-                    if (phase == 1'b0) begin
-                        // low phase
-                        sck  <= 1'b0;
-                        mosi <= shift_out[23];
-                    end else begin
-                        // high phase
-                        sck  <= 1'b1;
-                    end
-                end
-
-                // ------------------------------------------------------
-                // Receive 8 bits on MISO
-                // phase 0: SCK low
-                // phase 1: SCK high, sample MISO
-                // ------------------------------------------------------
-                ST_RECV: begin
-                    if (phase == 1'b0) begin
-                        sck   <= 1'b0;
-                        mosi  <= 1'b0;  // don't care
-                    end else begin
-                        sck   <= 1'b1;
-                    end
-                end
-
-                // ------------------------------------------------------
-                ST_DONE: begin
-                    sck   <= 1'b0;
-                end
-
-            endcase
+  // Address and LAST signal control logic
+  always @(posedge clk) begin
+    if (!rst_n) begin
+      ram_addr        <= 16'h0000;
+      last            <= 1'b0;
+    end else begin
+      if (seq_mode) begin 
+        if (spi_fetch_done) begin
+          if (byte_count < max_byte_count-2) begin
+            last        <= 1'b0;
+          end else if (byte_count == max_byte_count-2) begin
+            last        <= 1'b1;
+          end else if (byte_count == max_byte_count-1) begin  
+            last        <= 1'b0;
+            ram_addr    <= ram_addr + {{16-BYTE_COUNT_WIDTH{1'b0}}, max_byte_count};
+          end
         end
+      end else begin // Not sequential mode, just single fetch
+        if (start_spi_fetch) begin
+          last        <= start_spi_fetch; //  the first is the last
+          ram_addr    <= ram_addr + 1;
+        end
+      end
     end
+  end
+
+  assign spi_block_fetch_done = (byte_count == max_byte_count) && spi_fetch_done;
+
+// -------------------------------------------------------------
+// SPI memory controller register bank
+// -------------------------------------------------------------
+
+  wb_spi_mem_ctrl_regs u_wb_spi_mem_ctrl_regs (
+    .clk                                  (clk),
+    .rst_n                                (rst_n),
+    // Wishbone interface
+    .wb_addr_i                            (wb_addr_i),
+    .wb_wdata_i                           (wb_wdata_i),
+    .wb_we_i                              (wb_we_i),
+    .wb_stb_i                             (wb_stb_i),
+    .wb_rdata_o                           (wb_rdata_o),
+    .wb_ack_o                             (wb_ack_o),
+    .irq_o                                (irq_o),
+    // Register bank interface
+    // inputs
+    .ext_f_SPI_STATUS_spi_busy_i          (busy),
+    .ext_f_SPI_STATUS_spi_error_i         (1'b0),  // FiXME add some error reporting logic from the core
+    .r_BYTES_FETCHED_i                    (byte_count),
+    .ext_f_IRQ_STATUS_block_done_i        (spi_block_fetch_done),
+    .ext_f_IRQ_STATUS_byte_done_i         (spi_fetch_done),
+    // outputs
+    .f_SPI_CTRL_fetch_mode_o              (seq_mode),
+    .f_SPI_CTRL_start_pulse_o             (start_spi_fetch),
+    .r_MAX_FETCH_SIZE_o                   (max_byte_count),
+    .f_IRQ_ENABLE_byte_done_en_o          (irq_byte_done_en_unused),
+    .f_IRQ_ENABLE_block_done_en_o         (irq_block_done_en_unused),
+    .ext_f_IRQ_STATUS_byte_done_clr_o     (irq_byte_done_clr_unused),
+    .ext_f_IRQ_STATUS_block_done_clr_o    (irq_block_done_clr_unused)
+  );
+// -------------------------------------------------------------
+// SPI memory controller core
+// -------------------------------------------------------------
+
+  spi_mem_ctrl_core u_spi_mem_ctrl_core (
+    .clk         (clk),
+    .rst_n       (rst_n),
+    // Control signals from regs
+    .addr        (ram_addr),
+    .start       (start_spi_fetch),
+    .last        (last),
+    // Control singals back to regs
+    .busy        (busy),
+    .valid       (spi_fetch_done),
+    .data_out    (byte_out),
+    // SPI Interface
+    .cs_n        (cs_n),
+    .sck         (sck),
+    .mosi        (mosi),
+    .miso        (miso)
+  );
 
 endmodule
