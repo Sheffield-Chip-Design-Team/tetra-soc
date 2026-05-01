@@ -43,19 +43,24 @@ async def test_alu_combinational(uut):
       overflow = int(uut.overflow.value)
 
       if (
-        (not i + j > 15 and 
-        overflow == 1 and
-        i + j - 16 == result)
-        and
-        (not i + j == result and
-         overflow == 0)
+        not (
+          i + j > 15 and 
+          overflow == 1 and
+          i + j - 16 == result
+          )
+        and not (
+          i + j == result and
+          overflow == 0
+          )
         ):
-        op_pass = False
-        test_pass = False
+          op_pass = False
+          test_pass = False
       
-      uut._log.info(
-        f"Reg A: {reg_a}\tReg B: {reg_b}\tResult: {result}\tOverflow: {overflow}\tOperation Result: {op_pass}"
-        )
+    # Commented out log below to keep terminal output tidy. Uncomment to 
+
+      #uut._log.info(
+      #  f"Reg A: {reg_a}\tReg B: {reg_b}\tResult: {result}\tOverflow: {overflow}\tOperation Result: {op_pass}"
+      #  )
       
   uut.alu_control.value = 0
 
