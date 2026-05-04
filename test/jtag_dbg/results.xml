@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1777930351" />
+    <testcase name="test_jtag_command_to_debug_request" classname="test_jtag_debug_wrapper" file="/home/kiervillasaya/tetra/tetra-soc/test/jtag_dbg/test_jtag_debug_wrapper.py" lineno="187" time="0.010902881622314453" sim_time_ns="255.0" ratio_time="23388.31226765799" />
+  </testsuite>
+</testsuites>
