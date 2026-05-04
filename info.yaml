@@ -24,6 +24,8 @@ project:
     - "Registers.v"
     - "ALU.v"
     - "cpu.v"
+    - "dbg_unit.v"
+    - "jtag_tap.v"
     # - "spi_ram_model.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.

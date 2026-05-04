@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1777886622" />
+    <testcase name="test_jtag_tap_debug_command_path" classname="test_jtag_tap" file="/home/kiervillasaya/tetra/tetra-soc/test/jtag/test_jtag_tap.py" lineno="154" time="0.013777732849121094" sim_time_ns="246.0" ratio_time="17854.896933619435" />
+  </testsuite>
+</testsuites>

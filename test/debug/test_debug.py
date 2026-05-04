@@ -35,7 +35,7 @@ async def reset_dut(dut):
     await RisingEdge(dut.clk)
 
     # Small delay allows registered outputs to settle after clock edge
-    await Timer(1, units="ns")
+    await Timer(1, unit="ns")
 
 
 async def send_cmd(dut, cmd):
@@ -55,7 +55,7 @@ async def send_cmd(dut, cmd):
     await RisingEdge(dut.clk)
 
     # Small delay so outputs can be checked after clock edge
-    await Timer(1, units="ns")
+    await Timer(1, unit="ns")
 
     # Clear command inputs after one cycle
     dut.dbg_cmd_valid.value = 0
@@ -96,7 +96,7 @@ async def check_one_cycle_pulse(dut, cmd, expected_signal_name):
 
     # On the next clock edge, the request pulse should return low
     await RisingEdge(dut.clk)
-    await Timer(1, units="ns")
+    await Timer(1, unit="ns")
 
     assert expected_signal.value == 0, (
         f"{expected_signal_name} did not return low after one cycle"
@@ -120,7 +120,7 @@ async def test_debug_command_decoder(dut):
     """
 
     # Start a 10ns period clock
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
 
     # Put DUT into a known state before applying commands
     await reset_dut(dut)
@@ -139,4 +139,4 @@ async def test_debug_command_decoder(dut):
         assert dut.step_req.value == 0, f"Command {cmd:#04x} incorrectly asserted step_req"
 
         await RisingEdge(dut.clk)
-        await Timer(1, units="ns")
+        await Timer(1, unit="ns")

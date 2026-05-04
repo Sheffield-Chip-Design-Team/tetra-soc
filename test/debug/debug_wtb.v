@@ -19,7 +19,7 @@ module debug_wtb ();
   reg        resume_req;
   reg        halt_req;
 
-  dbg_unit u_debug (
+  dbg_unit u_dbg_unit (
     .clk              (clk),
     .rst_n            (rst_n),
     // Command interface from future JTAG TAP / testbench
