@@ -5,20 +5,24 @@ module ram_tb;
     reg clk;
     reg rst_n;
 
-    reg  [7:0] wb_addr_i;
-    reg  [7:0] wb_wdata_i;
-    wire [7:0] wb_rdata_o;
-    reg        wb_we_i;
-    reg        wb_cyc_i;
-    reg        wb_stb_i;
-    wire       wb_ack_o;
+    reg  [15:0] wb_addr_i;
+    reg  [7:0]  wb_wdata_i;
+    wire [7:0]  wb_rdata_o;
+    reg         wb_we_i;
+    reg         wb_cyc_i;
+    reg         wb_stb_i;
+    reg  [2:0]  wb_cti_i;
+    reg  [1:0]  wb_bte_i;
+    wire        wb_ack_o;
+    wire        wb_err_o;
 
     wire [7:0] ram_addr_o;
     wire [7:0] ram_rdata_o;
 
     wb_ram_ctrl #(
         .DATA_WIDTH(8),
-        .ADDR_WIDTH(8)
+        .RAM_ADDR_WIDTH(8),
+        .WB_ADDR_WIDTH(16)
     ) dut (
         .clk         (clk),
         .rst_n       (rst_n),
@@ -28,7 +32,10 @@ module ram_tb;
         .wb_we_i     (wb_we_i),
         .wb_cyc_i    (wb_cyc_i),
         .wb_stb_i    (wb_stb_i),
+        .wb_cti_i    (wb_cti_i),
+        .wb_bte_i    (wb_bte_i),
         .wb_ack_o    (wb_ack_o),
+        .wb_err_o    (wb_err_o),
         .ram_addr_o  (ram_addr_o),
         .ram_rdata_o (ram_rdata_o)
     );
