@@ -3,7 +3,14 @@
 // =======================================================================
 // Module:      sram_1rw
 // Project:     Tetra-SoC, by SHaRC
-// Description: Simple parameterised single-port read/write SRAM.
+// Description: Simple parameterised single-port synchronous read/write RAM.
+// =======================================================================
+//
+// Notes:
+// - Synchronous write.
+// - Synchronous read: rdata updates on the rising clock edge.
+// - This better models a real SRAM/OpenRAM-style macro, where read data is
+//   available after a clocked read access rather than combinationally.
 // =======================================================================
 
 module sram_1rw #(
@@ -16,7 +23,7 @@ module sram_1rw #(
     input  wire                  we,
     input  wire [ADDR_WIDTH-1:0] addr,
     input  wire [DATA_WIDTH-1:0] wdata,
-    output wire [DATA_WIDTH-1:0] rdata
+    output reg  [DATA_WIDTH-1:0] rdata
 );
 
     localparam DEPTH = (1 << ADDR_WIDTH);
@@ -32,17 +39,18 @@ module sram_1rw #(
     end
 `endif
 
-    // Synchronous write. RAM contents are intentionally not cleared on reset.
     always @(posedge clk) begin
         if (!rst_n) begin
-            // No memory clear on reset.
-        end else if (we) begin
-            mem[addr] <= wdata;
+            rdata <= {DATA_WIDTH{1'b0}};
+        end else begin
+            if (we) begin
+                mem[addr] <= wdata;
+                rdata     <= wdata;  // write-first behaviour for simulation
+            end else begin
+                rdata     <= mem[addr];
+            end
         end
     end
-
-    // Combinational read for first-version RAM subsystem.
-    assign rdata = mem[addr];
 
 endmodule
 
