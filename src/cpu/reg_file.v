@@ -4,9 +4,7 @@
 // Description: Dual-port register file for CPU register storage.
 // =======================================================================
 
-module reg_file #(
-  parameter DATA_WIDTH = 4
-)(
+module reg_file(
   input             clk,
   input             a_en,   // a_en, b_en, and s_en should all be mutually exclusive.
   input             b_en,   //
