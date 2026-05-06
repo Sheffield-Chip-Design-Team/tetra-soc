@@ -11,7 +11,8 @@ module alu_wtb;
   reg  [3:0] acc;
   reg  [5:0] alu_control;
   wire [3:0] result;
-  wire  overflow;
+  wire  of_set;
+  wire  uf_set;
 
 alu dut (
       .reg_a_val(reg_a_val),
@@ -19,7 +20,8 @@ alu dut (
       .acc(acc),
       .alu_control(alu_control),
       .result(result),
-      .overflow(overflow)
+      .of_set(of_set),
+      .uf_set(uf_set)
   );
 
 endmodule 

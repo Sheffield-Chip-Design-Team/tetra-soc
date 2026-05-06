@@ -8,37 +8,38 @@
 :vpi_module "/usr/lib/x86_64-linux-gnu/ivl/v2005_math.vpi";
 :vpi_module "/usr/lib/x86_64-linux-gnu/ivl/va_math.vpi";
 :vpi_module "/usr/lib/x86_64-linux-gnu/ivl/v2009.vpi";
-S_0x595264cf77e0 .scope package, "$unit" "$unit" 2 1;
+S_0x61890a63af30 .scope package, "$unit" "$unit" 2 1;
  .timescale -9 -12;
-S_0x595264cf7970 .scope module, "alu_wtb" "alu_wtb" 3 6;
+S_0x61890a63b0c0 .scope module, "alu_wtb" "alu_wtb" 3 6;
  .timescale -9 -9;
-v0x595264d0afb0_0 .var "acc", 3 0;
-v0x595264d0b090_0 .var "alu_control", 5 0;
-v0x595264d0b160_0 .net "overflow", 0 0, v0x595264d0ab60_0;  1 drivers
-v0x595264d0b260_0 .var "reg_a_val", 3 0;
-v0x595264d0b330_0 .var "reg_b_val", 3 0;
-v0x595264d0b420_0 .net "result", 3 0, v0x595264d0ae10_0;  1 drivers
-S_0x595264cf9980 .scope module, "dut" "alu" 3 16, 4 8 0, S_0x595264cf7970;
+v0x61890a64d990_0 .var "acc", 3 0;
+v0x61890a64da70_0 .var "alu_control", 5 0;
+v0x61890a64db40_0 .net "of_set", 0 0, v0x61890a64d460_0;  1 drivers
+v0x61890a64dc40_0 .var "reg_a_val", 3 0;
+v0x61890a64dd10_0 .var "reg_b_val", 3 0;
+v0x61890a64de00_0 .net "result", 3 0, v0x61890a64d710_0;  1 drivers
+v0x61890a64ded0_0 .net "uf_set", 0 0, v0x61890a64d7f0_0;  1 drivers
+S_0x61890a5fe490 .scope module, "dut" "alu" 3 17, 4 8 0, S_0x61890a63b0c0;
  .timescale -9 -12;
     .port_info 0 /INPUT 4 "reg_a_val";
     .port_info 1 /INPUT 4 "reg_b_val";
     .port_info 2 /INPUT 4 "acc";
     .port_info 3 /INPUT 6 "alu_control";
     .port_info 4 /OUTPUT 4 "result";
-    .port_info 5 /OUTPUT 1 "overflow";
-v0x595264cf7b00_0 .net "acc", 3 0, v0x595264d0afb0_0;  1 drivers
-v0x595264d0aa80_0 .net "alu_control", 5 0, v0x595264d0b090_0;  1 drivers
-v0x595264d0ab60_0 .var "overflow", 0 0;
-v0x595264d0ac00_0 .net "reg_a_val", 3 0, v0x595264d0b260_0;  1 drivers
-v0x595264d0ace0_0 .net "reg_b_val", 3 0, v0x595264d0b330_0;  1 drivers
-v0x595264d0ae10_0 .var "result", 3 0;
-E_0x595264cf5370 .event anyedge, v0x595264d0aa80_0, v0x595264d0ac00_0, v0x595264d0ace0_0, v0x595264cf7b00_0;
-S_0x595264cf97f0 .scope module, "cocotb_iverilog_dump" "cocotb_iverilog_dump" 5 1;
- .timescale -9 -9;
-    .scope S_0x595264cf9980;
+    .port_info 5 /OUTPUT 1 "of_set";
+    .port_info 6 /OUTPUT 1 "uf_set";
+v0x61890a60fd50_0 .net "acc", 3 0, v0x61890a64d990_0;  1 drivers
+v0x61890a610430_0 .net "alu_control", 5 0, v0x61890a64da70_0;  1 drivers
+v0x61890a64d460_0 .var "of_set", 0 0;
+v0x61890a64d500_0 .net "reg_a_val", 3 0, v0x61890a64dc40_0;  1 drivers
+v0x61890a64d5e0_0 .net "reg_b_val", 3 0, v0x61890a64dd10_0;  1 drivers
+v0x61890a64d710_0 .var "result", 3 0;
+v0x61890a64d7f0_0 .var "uf_set", 0 0;
+E_0x61890a638940 .event anyedge, v0x61890a610430_0, v0x61890a64d500_0, v0x61890a64d5e0_0, v0x61890a60fd50_0;
+    .scope S_0x61890a5fe490;
 T_0 ;
-    %wait E_0x595264cf5370;
-    %load/vec4 v0x595264d0aa80_0;
+    %wait E_0x61890a638940;
+    %load/vec4 v0x61890a610430_0;
     %dup/vec4;
     %pushi/vec4 1, 0, 6;
     %cmp/u;
@@ -64,67 +65,68 @@ T_0 ;
     %cmp/u;
     %jmp/1 T_0.5, 6;
     %pushi/vec4 0, 0, 4;
-    %store/vec4 v0x595264d0ae10_0, 0, 4;
+    %store/vec4 v0x61890a64d710_0, 0, 4;
     %pushi/vec4 0, 0, 1;
-    %store/vec4 v0x595264d0ab60_0, 0, 1;
+    %store/vec4 v0x61890a64d460_0, 0, 1;
+    %pushi/vec4 0, 0, 1;
+    %store/vec4 v0x61890a64d7f0_0, 0, 1;
     %jmp T_0.7;
 T_0.0 ;
-    %load/vec4 v0x595264d0ac00_0;
+    %load/vec4 v0x61890a64d500_0;
     %pad/u 5;
-    %load/vec4 v0x595264d0ace0_0;
+    %load/vec4 v0x61890a64d5e0_0;
     %pad/u 5;
     %add;
     %split/vec4 4;
-    %store/vec4 v0x595264d0ae10_0, 0, 4;
-    %store/vec4 v0x595264d0ab60_0, 0, 1;
+    %store/vec4 v0x61890a64d710_0, 0, 4;
+    %store/vec4 v0x61890a64d460_0, 0, 1;
     %jmp T_0.7;
 T_0.1 ;
-    %load/vec4 v0x595264d0ac00_0;
-    %load/vec4 v0x595264d0ace0_0;
+    %load/vec4 v0x61890a64d500_0;
+    %load/vec4 v0x61890a64d5e0_0;
     %sub;
-    %store/vec4 v0x595264d0ae10_0, 0, 4;
+    %store/vec4 v0x61890a64d710_0, 0, 4;
     %jmp T_0.7;
 T_0.2 ;
-    %load/vec4 v0x595264cf7b00_0;
+    %load/vec4 v0x61890a60fd50_0;
+    %pad/u 5;
     %ix/load 4, 1, 0;
     %flag_set/imm 4, 0;
     %shiftl 4;
-    %store/vec4 v0x595264d0ae10_0, 0, 4;
+    %split/vec4 4;
+    %store/vec4 v0x61890a64d710_0, 0, 4;
+    %store/vec4 v0x61890a64d460_0, 0, 1;
     %jmp T_0.7;
 T_0.3 ;
-    %load/vec4 v0x595264cf7b00_0;
+    %load/vec4 v0x61890a60fd50_0;
+    %pad/u 5;
     %ix/load 4, 1, 0;
     %flag_set/imm 4, 0;
     %shiftr 4;
-    %store/vec4 v0x595264d0ae10_0, 0, 4;
+    %split/vec4 4;
+    %store/vec4 v0x61890a64d710_0, 0, 4;
+    %store/vec4 v0x61890a64d7f0_0, 0, 1;
     %jmp T_0.7;
 T_0.4 ;
-    %load/vec4 v0x595264d0ac00_0;
-    %load/vec4 v0x595264d0ace0_0;
+    %load/vec4 v0x61890a64d500_0;
+    %load/vec4 v0x61890a64d5e0_0;
     %and;
-    %store/vec4 v0x595264d0ae10_0, 0, 4;
+    %store/vec4 v0x61890a64d710_0, 0, 4;
     %jmp T_0.7;
 T_0.5 ;
-    %load/vec4 v0x595264d0ac00_0;
-    %load/vec4 v0x595264d0ace0_0;
+    %load/vec4 v0x61890a64d500_0;
+    %load/vec4 v0x61890a64d5e0_0;
     %xor;
-    %store/vec4 v0x595264d0ae10_0, 0, 4;
+    %store/vec4 v0x61890a64d710_0, 0, 4;
     %jmp T_0.7;
 T_0.7 ;
     %pop/vec4 1;
     %jmp T_0;
     .thread T_0, $push;
-    .scope S_0x595264cf97f0;
-T_1 ;
-    %vpi_call/w 5 3 "$dumpfile", "sim_build/rtl/alu_wtb.fst" {0 0 0};
-    %vpi_call/w 5 4 "$dumpvars", 32'sb00000000000000000000000000000000, S_0x595264cf7970 {0 0 0};
-    %end;
-    .thread T_1;
 # The file index is used to find the file name in the following table.
-:file_names 6;
+:file_names 5;
     "N/A";
     "<interactive>";
     "-";
     "/home/aaiva132/git-repos/tetra-soc/test/cpu/alu/alu_wtb.v";
     "/home/aaiva132/git-repos/tetra-soc/test/cpu/alu/../../../src/cpu/alu.v";
-    "sim_build/rtl/cocotb_iverilog_dump.v";

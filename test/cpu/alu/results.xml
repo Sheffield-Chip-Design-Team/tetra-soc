@@ -1,6 +1,6 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1777638189" />
-    <testcase name="test_alu_combinational" classname="test_alu" file="/home/aaiva132/git-repos/tetra-soc/test/cpu/alu/test_alu.py" lineno="73" time="0.007601261138916016" sim_time_ns="1290.0" ratio_time="169708.68076030363" />
+    <property name="random_seed" value="1777757418" />
+    <testcase name="test_alu_combinational" classname="test_alu" file="/home/aaiva132/git-repos/tetra-soc/test/cpu/alu/test_alu.py" lineno="123" time="0.01965022087097168" sim_time_ns="2575.0" ratio_time="131041.78405464759" />
   </testsuite>
 </testsuites>
