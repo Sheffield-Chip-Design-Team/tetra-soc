@@ -1,8 +1,6 @@
 module ControlUnit (
     input  [15:0]   instruction,
     input  [3:0]    flags,
-    // I assume an 'instruction' to have this format:
-    // (opcode 4 bits)(sub on/off 1 with a logic mode bit 1 (total 2 bits))(Logic or aritmetic bit)( immediate adrressing 1 bit)(operand 4 bits)
     output reg [5:0] alu_control
 
 );
@@ -10,11 +8,11 @@ module ControlUnit (
 wire    alu_en;
 assign  alu_en = (instruction[3:0] == 1) | (instruction[3:0] == 2);
 
-wire    opcode;
-assign  opcode = instruction[3:0];
+wire    [3:0]   opcode;
+assign          opcode = instruction[3:0];
 
-wire    operand;
-assign  operand = instruction[7:4];
+wire    [3:0]   operand;
+assign          operand = instruction[7:4];
 
 // ALU CONTROL BIT LOGIC REMINDER:
 
@@ -56,13 +54,25 @@ always @(*) begin
         end
 
         
-        6'b000010, //INC
-        6'b010010, //DEC
-        6'b100010, //LSH
-        6'b110010: //RSH
+        8'b00000010, //INC
+        8'b00010010, //DEC
+        8'b00100010, //LSH
+        8'b00110010, //RSH
+        8'b01000010, //INC
+        8'b01010010, //DEC
+        8'b01100010, //LSH
+        8'b01110010, //RSH
+        8'b10000010, //INC
+        8'b10010010, //DEC
+        8'b10100010, //LSH
+        8'b10110010, //RSH
+        8'b11000010, //INC
+        8'b11010010, //DEC
+        8'b11100010, //LSH
+        8'b11110010: //RSH
         begin 
             alu_control[5] <= 1;
-            alu_control[4] <= flags[2];
+            alu_control[4] <= (instruction[4] & flags[3]) | (!instruction[4] & flags[2]);
             alu_control[3] <= 0;
             alu_control[2] <= 0;
             alu_control[1] <= instruction[6];
@@ -70,11 +80,11 @@ always @(*) begin
 
         end
 
-   
 
-      
+        default:begin 
+             alu_control <= 0;
 
-        default: alu_control <= 0;
+        end
     endcase
 
 end 
