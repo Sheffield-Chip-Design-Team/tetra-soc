@@ -8,11 +8,11 @@ module reg_file #(
   parameter DATA_WIDTH = 4
 )(
   input             clk,
-  input             a_en,
-  input             b_en,
-  input             s_en,
-  input             of_in,
-  input             uf_in,
+  input             a_en,   // a_en, b_en, and s_en should all be mutually exclusive.
+  input             b_en,   //
+  input             s_en,   //
+  input             of_in,  // taken from the result of alu operations
+  input             uf_in,  //
   input       [3:0] d_in,
   output  reg [3:0] ra_out,
   output  reg [3:0] rb_out, 
