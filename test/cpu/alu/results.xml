@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1777644983" />
+    <testcase name="test_alu_sanity" classname="test_alu" file="/home/tcowie1/Git-Repos/tetra-soc/test/cpu/alu/test_alu.py" lineno="14" time="0.013328790664672852" sim_time_ns="4080.0" ratio_time="306104.2897773008" />
+  </testsuite>
+</testsuites>
