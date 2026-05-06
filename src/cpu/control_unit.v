@@ -29,8 +29,6 @@ always @(*) begin
             alu_control[1] <= 0;
             alu_control[0] <= instruction[4];
         end
-
-
     endcase
 end 
 endmodule
