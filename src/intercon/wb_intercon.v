@@ -138,6 +138,14 @@ wire        wb_resize_ram_ack;
 wire        wb_resize_ram_err;
 wire        wb_resize_ram_rty;
 
+// Drive downstream byte-select outputs (8-bit peripherals ignore most bits, but
+// the interconnect still exposes 4-bit SEL to remain Wishbone-compatible).
+assign wb_rom_sel_o       = wb_resize_rom_sel;
+assign wb_ext_flash_sel_o = wb_resize_ext_flash_sel;
+assign wb_spi_m_sel_o     = wb_resize_spi_m_sel;
+assign wb_uart_sel_o      = wb_resize_uart_sel;
+assign wb_ram_sel_o       = wb_resize_ram_sel;
+
 wb_mux
   #(.num_devices (5),
     .MATCH_ADDR  ({32'h00004000, 32'h00004000, 32'h00002000, 32'h00000000, 32'h00000020}),
