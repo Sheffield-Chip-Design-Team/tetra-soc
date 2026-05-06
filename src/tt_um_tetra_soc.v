@@ -39,6 +39,8 @@ module tt_um_tetra_soc (
 
   // TODO add clocking and reset logic as needed
 
+  wire [15:0] dbg_addr_in = {ui_in[7:0], ui_in[7:0]};
+
   dig_top u_dig_top (
     .clk          (clk),
     .rst_n        (rst_n),
@@ -63,7 +65,12 @@ module tt_um_tetra_soc (
 
     .vga_rr       (vga_rr), 
     .vga_gg       (vga_gg), 
-    .vga_bb       (vga_bb)
+    .vga_bb       (vga_bb),
+
+    .dbg_addr_in    (dbg_addr_in),
+    .dbg_data_in    (ui_in[7:0]),
+    .dbg_addr_out   (),
+    .dbg_data_out   ()
   );
 
 // ------------------------------------------------------------------

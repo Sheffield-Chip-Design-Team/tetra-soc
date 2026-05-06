@@ -1,3 +1,6 @@
+# Local Python virtual environment
+.*env/
+
 .DS_Store
 .idea
 *.vcd
@@ -17,38 +20,9 @@ test/gate_level_netlist.v
 *.pyc
 *.vvp
 .vscode/settings.json
-.vscode/settings.json
-
-# Local Python virtual environment
-.env/
-
-# macOS
-.DS_Store
-
-# Simulation artefacts
-results.xml
-sim_build/
-*.vvp
-*.vcd
-*.fst
-__pycache__/
-*.pyc
 cocotb_iverilog_dump.v
 cmds.f
 
-# Local Python virtual environment
-.env/
-
-# macOS
-.DS_Store
-
-# Simulation artefacts
-results.xml
-sim_build/
-*.vvp
-*.vcd
-*.fst
-__pycache__/
-*.pyc
-cocotb_iverilog_dump.v
-cmds.f
+*_preview.png
+*_render.png
+*_preview.svg

@@ -29,7 +29,12 @@ module dig_top (
     output wire       vga_vsync,  // uo_out
     output wire [1:0] vga_rr,     // uo_out
     output wire [1:0] vga_gg,     // uo_out
-    output wire [1:0] vga_bb      // uo_out
+    output wire [1:0] vga_bb,      // uo_out
+
+    input wire  [15:0] dbg_addr_in,
+    input wire  [7:0]  dbg_data_in,
+    output wire [15:0] dbg_addr_out,
+    output wire [7:0]  dbg_data_out
 );
 
 // -----------------------------------------------------------------------------
@@ -138,12 +143,56 @@ module dig_top (
   assign vga_gg    = 2'b00;
   assign vga_bb    = 2'b00;
 
+  // CPU Wishbone master interface (connected to interconnect)
+  wire [31:0] wb_cpu_m_adr_o;
+  wire  [7:0] wb_cpu_m_dat_o;
+  wire  [7:0] wb_cpu_m_dat_i;
+  wire        wb_cpu_m_we_o;
+  wire        wb_cpu_m_cyc_o;
+  wire        wb_cpu_m_stb_o;
+  wire  [2:0] wb_cpu_m_cti_o;
+  wire  [1:0] wb_cpu_m_bte_o;
+  wire        wb_cpu_m_ack_i;
+
+  // CPU only drives a 16-bit address; tie upper bits low to avoid undriven nets.
+  assign wb_cpu_m_adr_o[31:16] = 16'h0000;
+
+  wire halt;
+  wire resume;
+  wire step;
+
+  assign dbg_addr_out = wb_cpu_m_adr_o[15:0];
+  assign dbg_data_out = wb_cpu_m_dat_o;
+
+  
+  assign {halt, resume, step} = dbg_addr_in[2:0]; 
+  
 // -----------------------------------------------------------------------------
 // CPU
 // -----------------------------------------------------------------------------
 
+  cpu_top u_cpu_top (
+    .clk            (clk),
+    .rst_n          (rst_n),
+    // debug interface 
+    .halt           (halt),
+    .resume         (resume),
+    .step           (step),
+    .dbg_addr_in    (dbg_addr_in),
+    .dbg_data_in    (dbg_data_in),
 
-
+    // wishbone master interface for connection to system bus
+    .wb_adr_o       (wb_cpu_m_adr_o[15:0]),
+    .wb_dat_i       (wb_cpu_m_dat_i),
+    .wb_we_o        (wb_cpu_m_we_o),
+    .wb_dat_o       (wb_cpu_m_dat_o),
+    .wb_cyc_o       (wb_cpu_m_cyc_o),
+    .wb_stb_o       (wb_cpu_m_stb_o),
+    .wb_cti_o       (wb_cpu_m_cti_o),
+    .wb_bte_o       (wb_cpu_m_bte_o),
+    .wb_ack_i       (wb_cpu_m_ack_i)
+  );
+  
 // -----------------------------------------------------------------------------
 // Interconnect
 // -----------------------------------------------------------------------------
@@ -153,17 +202,17 @@ module dig_top (
         .sys_rst_n             (rst_n),
 
         // CPU Wishbone Slave Interface
-        .wb_cpu_s_adr_i        (wb_cpu_s_adr_i),
-        .wb_cpu_s_dat_i        (wb_cpu_s_dat_i),
-        .wb_cpu_s_we_i         (wb_cpu_s_we_i),
-        .wb_cpu_s_cyc_i        (wb_cpu_s_cyc_i),
-        .wb_cpu_s_stb_i        (wb_cpu_s_stb_i),
-        .wb_cpu_s_cti_i        (wb_cpu_s_cti_i),
-        .wb_cpu_s_bte_i        (wb_cpu_s_bte_i),
-        .wb_cpu_s_dat_o        (wb_cpu_s_dat_o),
-        .wb_cpu_s_ack_o        (wb_cpu_s_ack_o),
-        .wb_cpu_s_err_o        (wb_cpu_s_err_o),
-        .wb_cpu_s_rty_o        (wb_cpu_s_rty_o),
+        .wb_cpu_s_adr_i        (wb_cpu_m_adr_o),
+        .wb_cpu_s_dat_i        (wb_cpu_m_dat_o),
+        .wb_cpu_s_we_i         (wb_cpu_m_we_o),
+        .wb_cpu_s_cyc_i        (wb_cpu_m_cyc_o),
+        .wb_cpu_s_stb_i        (wb_cpu_m_stb_o),
+        .wb_cpu_s_cti_i        (wb_cpu_m_cti_o),
+        .wb_cpu_s_bte_i        (wb_cpu_m_bte_o),
+        .wb_cpu_s_dat_o        (wb_cpu_m_dat_i),
+        .wb_cpu_s_ack_o        (wb_cpu_m_ack_i),
+        .wb_cpu_s_err_o        (),
+        .wb_cpu_s_rty_o        (),
         
         // Wishbone peripheral interfaces (8-bit slaves)
         // ROM
