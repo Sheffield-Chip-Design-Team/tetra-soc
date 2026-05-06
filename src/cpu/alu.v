@@ -34,6 +34,7 @@ always @* begin
         case (alu_control[3:0])
             4'b0000: {of_set, result} <= acc_val + 1 + use_of;      //  INC / INCC
             4'b0001: {uf_set, result} <= acc_val - 1 - use_uf;      //  DEC / DECB
+
             4'b0010: {of_set, result} <= {acc_val, use_of} << 1;    //  LSH / LSHC
             4'b0011: {result, uf_set} <= {use_uf, acc_val} >> 1;    //  RSH / RSHB
 
@@ -41,7 +42,7 @@ always @* begin
             4'b0110: {of_set, result} <= inp_a + inp_b + use_of;    //
 
             4'b0101,                                                // SUB / SUBB
-            4'b0111: {uf_set, result} <= inp_a - inp_b - use_of;
+            4'b0111: {uf_set, result} <= inp_a - inp_b - use_of;    //
 
             4'b1000,                            //  AND
             4'b1100: result <= inp_a & inp_b;   //
