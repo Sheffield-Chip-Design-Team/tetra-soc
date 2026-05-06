@@ -1,3 +1,6 @@
+# Local Python virtual environment
+.*env/
+
 .DS_Store
 .idea
 *.vcd
@@ -17,7 +20,9 @@ test/gate_level_netlist.v
 *.pyc
 *.vvp
 .vscode/settings.json
-.vscode/settings.json
+cocotb_iverilog_dump.v
+cmds.f
+
 *_preview.png
 *_render.png
 *_preview.svg
