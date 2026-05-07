@@ -1,4 +1,4 @@
-module ControlUnit (
+module control_unit (
     input  [15:0]   instruction,
     input  [3:0]    flags,
     output reg [5:0] alu_control
@@ -38,6 +38,7 @@ always @(*) begin
             alu_control[1] <= 0;
             alu_control[0] <= instruction[4];
         end
+        
         8'b01000001,    // AND Imp
         8'b01010001,    // OR Imp
         8'b01100001,    // XOR Imp
@@ -89,3 +90,9 @@ always @(*) begin
 
 end 
 endmodule
+
+
+
+
+
+
