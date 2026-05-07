@@ -3,20 +3,23 @@
 // =======================================================================
 // Module:      wb_ram_ctrl
 // Project:     Tetra-SoC, by SHaRC
-// Description: Parameterisable 8-bit Wishbone RAM controller.
+// Description: Parameterisable Wishbone RAM controller with synchronous read.
 // =======================================================================
 //
 // Features:
-// - Parameterisable data width and RAM address width
-// - Separate Wishbone address width for out-of-range detection
-// - Single-cycle read/write response
-// - Basic burst-compatible interface using Wishbone CTI/BTE signals
-// - Error response for accesses outside the configured RAM address space
+// - Parameterisable data width and RAM address width.
+// - Separate Wishbone address width for out-of-range detection.
+// - Registered ACK/ERR response.
+// - Supports clocked/synchronous RAM read behaviour.
+// - Basic burst-compatible interface using Wishbone CTI/BTE signals.
+// - Error response for accesses outside the configured RAM address space.
 //
-// Notes:
-// - Burst address sequencing is expected to be driven by the Wishbone master.
-// - This slave responds to each valid in-range beat with ACK.
-// - Out-of-range accesses assert ERR and do not write RAM.
+// Timing:
+// - A valid in-range request is accepted on a clock edge.
+// - ACK is asserted on the following cycle.
+// - For reads, wb_rdata_o is valid when ACK is asserted.
+// - For writes, the RAM write occurs on the request clock edge and ACK is
+//   returned on the following cycle.
 // =======================================================================
 
 module wb_ram_ctrl #(
@@ -39,25 +42,25 @@ module wb_ram_ctrl #(
     input  wire [2:0]                 wb_cti_i,
     input  wire [1:0]                 wb_bte_i,
 
-    output wire                       wb_ack_o,
-    output wire                       wb_err_o,
+    output reg                        wb_ack_o,
+    output reg                        wb_err_o,
 
     // Debug / observation outputs
     output wire [RAM_ADDR_WIDTH-1:0]  ram_addr_o,
     output wire [DATA_WIDTH-1:0]      ram_rdata_o
 );
 
-    wire wb_valid;
+    wire wb_request;
     wire addr_in_range;
     wire ram_we;
-    wire [DATA_WIDTH-1:0] ram_rdata;
     wire [RAM_ADDR_WIDTH-1:0] ram_addr;
+    wire [DATA_WIDTH-1:0] ram_rdata;
 
-    assign wb_valid = wb_cyc_i & wb_stb_i;
+    reg response_is_write;
+    reg [DATA_WIDTH-1:0] response_wdata;
 
-    // Address range check.
-    // If the incoming Wishbone address is wider than the RAM address,
-    // the upper bits must be zero. Otherwise, the access is out of range.
+    assign wb_request = wb_cyc_i & wb_stb_i;
+
     generate
         if (WB_ADDR_WIDTH > RAM_ADDR_WIDTH) begin : gen_addr_range_check
             assign addr_in_range =
@@ -70,27 +73,37 @@ module wb_ram_ctrl #(
 
     assign ram_addr = wb_addr_i[RAM_ADDR_WIDTH-1:0];
 
-    // In-range access: ACK.
-    // Out-of-range access: ERR.
-    assign wb_ack_o = wb_valid & addr_in_range;
-    assign wb_err_o = wb_valid & ~addr_in_range;
-
-    // Write only during valid in-range Wishbone write cycles.
-    assign ram_we = wb_valid & addr_in_range & wb_we_i;
+    // Write on the request clock edge for valid in-range writes.
+    assign ram_we = wb_request & addr_in_range & wb_we_i;
 
     assign ram_addr_o  = ram_addr;
     assign ram_rdata_o = ram_rdata;
 
-    // On valid writes, return the written value.
-    // On reads, return RAM data.
-    // On out-of-range access, return zero.
-    assign wb_rdata_o = addr_in_range
-                      ? (wb_we_i ? wb_wdata_i : ram_rdata)
-                      : {DATA_WIDTH{1'b0}};
+    // Registered response. ACK/ERR are delayed by one clock cycle.
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            wb_ack_o          <= 1'b0;
+            wb_err_o          <= 1'b0;
+            response_is_write <= 1'b0;
+            response_wdata    <= {DATA_WIDTH{1'b0}};
+        end else begin
+            wb_ack_o          <= wb_request & addr_in_range;
+            wb_err_o          <= wb_request & ~addr_in_range;
+            response_is_write <= wb_request & addr_in_range & wb_we_i;
+            response_wdata    <= wb_wdata_i;
+        end
+    end
+
+    // For reads, ram_rdata is valid when wb_ack_o is asserted.
+    // For writes, return the written value for visibility in simulation.
+    // For out-of-range accesses, return zero.
+    assign wb_rdata_o = wb_err_o
+                      ? {DATA_WIDTH{1'b0}}
+                      : (response_is_write ? response_wdata : ram_rdata);
 
     // CTI/BTE are accepted for burst-compatible access.
-    // The slave does not need to internally increment the address because
-    // the Wishbone master supplies each beat address.
+    // The master supplies each beat address. This controller returns one
+    // registered response per valid request beat.
     wire [2:0] unused_cti;
     wire [1:0] unused_bte;
     assign unused_cti = wb_cti_i;

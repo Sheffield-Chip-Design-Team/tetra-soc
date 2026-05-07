@@ -38,15 +38,18 @@ async def wb_write(dut, addr, data, cti=CTI_CLASSIC):
     dut.wb_bte_i.value = BTE_LINEAR
 
     await Timer(1, unit="ns")
+    assert int(dut.wb_ack_o.value) == 0, "Write ACK should be registered, not combinational"
+    assert int(dut.wb_err_o.value) == 0, "Write ERR should be registered, not combinational"
+
+    await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
 
     assert int(dut.wb_ack_o.value) == 1, (
-        f"Wishbone write did not ACK at addr 0x{addr:04X}"
+        f"Wishbone write did not ACK after clock at addr 0x{addr:04X}"
     )
     assert int(dut.wb_err_o.value) == 0, (
         f"Wishbone write unexpectedly errored at addr 0x{addr:04X}"
     )
-
-    await RisingEdge(dut.clk)
 
     dut.wb_cyc_i.value = 0
     dut.wb_stb_i.value = 0
@@ -54,6 +57,7 @@ async def wb_write(dut, addr, data, cti=CTI_CLASSIC):
     dut.wb_cti_i.value = CTI_CLASSIC
 
     await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
 
 
 async def wb_read(dut, addr, cti=CTI_CLASSIC):
@@ -66,9 +70,14 @@ async def wb_read(dut, addr, cti=CTI_CLASSIC):
     dut.wb_bte_i.value = BTE_LINEAR
 
     await Timer(1, unit="ns")
+    assert int(dut.wb_ack_o.value) == 0, "Read ACK should be registered, not combinational"
+    assert int(dut.wb_err_o.value) == 0, "Read ERR should be registered, not combinational"
+
+    await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
 
     assert int(dut.wb_ack_o.value) == 1, (
-        f"Wishbone read did not ACK at addr 0x{addr:04X}"
+        f"Wishbone read did not ACK after clock at addr 0x{addr:04X}"
     )
     assert int(dut.wb_err_o.value) == 0, (
         f"Wishbone read unexpectedly errored at addr 0x{addr:04X}"
@@ -76,13 +85,12 @@ async def wb_read(dut, addr, cti=CTI_CLASSIC):
 
     data = int(dut.wb_rdata_o.value)
 
-    await RisingEdge(dut.clk)
-
     dut.wb_cyc_i.value = 0
     dut.wb_stb_i.value = 0
     dut.wb_cti_i.value = CTI_CLASSIC
 
     await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
 
     return data
 
@@ -97,6 +105,11 @@ async def wb_invalid_access(dut, addr, write=False, data=0):
     dut.wb_bte_i.value = BTE_LINEAR
 
     await Timer(1, unit="ns")
+    assert int(dut.wb_ack_o.value) == 0, "Invalid access ACK should be registered"
+    assert int(dut.wb_err_o.value) == 0, "Invalid access ERR should be registered"
+
+    await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
 
     assert int(dut.wb_ack_o.value) == 0, (
         f"Out-of-range access should not ACK at addr 0x{addr:04X}"
@@ -105,13 +118,12 @@ async def wb_invalid_access(dut, addr, write=False, data=0):
         f"Out-of-range access should assert ERR at addr 0x{addr:04X}"
     )
 
-    await RisingEdge(dut.clk)
-
     dut.wb_cyc_i.value = 0
     dut.wb_stb_i.value = 0
     dut.wb_we_i.value = 0
 
     await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
 
 
 async def wb_burst_write(dut, start_addr, values):
@@ -128,6 +140,7 @@ async def wb_burst_write(dut, start_addr, values):
         dut.wb_wdata_i.value = data
         dut.wb_cti_i.value = CTI_END_OF_BURST if is_last else CTI_INCREMENTING_BURST
 
+        await RisingEdge(dut.clk)
         await Timer(1, unit="ns")
 
         assert int(dut.wb_ack_o.value) == 1, (
@@ -137,14 +150,13 @@ async def wb_burst_write(dut, start_addr, values):
             f"Burst write errored at addr 0x{addr:04X}"
         )
 
-        await RisingEdge(dut.clk)
-
     dut.wb_cyc_i.value = 0
     dut.wb_stb_i.value = 0
     dut.wb_we_i.value = 0
     dut.wb_cti_i.value = CTI_CLASSIC
 
     await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
 
 
 async def wb_burst_read(dut, start_addr, length):
@@ -163,6 +175,7 @@ async def wb_burst_read(dut, start_addr, length):
         dut.wb_wdata_i.value = 0
         dut.wb_cti_i.value = CTI_END_OF_BURST if is_last else CTI_INCREMENTING_BURST
 
+        await RisingEdge(dut.clk)
         await Timer(1, unit="ns")
 
         assert int(dut.wb_ack_o.value) == 1, (
@@ -174,13 +187,12 @@ async def wb_burst_read(dut, start_addr, length):
 
         values.append(int(dut.wb_rdata_o.value))
 
-        await RisingEdge(dut.clk)
-
     dut.wb_cyc_i.value = 0
     dut.wb_stb_i.value = 0
     dut.wb_cti_i.value = CTI_CLASSIC
 
     await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
 
     return values
 
@@ -192,6 +204,36 @@ async def test_reset_idle(dut):
 
     assert int(dut.wb_ack_o.value) == 0, "ACK should be low when bus is idle"
     assert int(dut.wb_err_o.value) == 0, "ERR should be low when bus is idle"
+
+
+@cocotb.test()
+async def test_read_response_is_clocked(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
+    await reset_dut(dut)
+
+    await wb_write(dut, 0x0004, 0x3C)
+
+    dut.wb_addr_i.value = 0x0004
+    dut.wb_wdata_i.value = 0
+    dut.wb_we_i.value = 0
+    dut.wb_cyc_i.value = 1
+    dut.wb_stb_i.value = 1
+    dut.wb_cti_i.value = CTI_CLASSIC
+    dut.wb_bte_i.value = BTE_LINEAR
+
+    await Timer(1, unit="ns")
+    assert int(dut.wb_ack_o.value) == 0, "Read ACK should not be combinational"
+
+    await RisingEdge(dut.clk)
+    await Timer(1, unit="ns")
+
+    assert int(dut.wb_ack_o.value) == 1, "Read ACK should assert after clock edge"
+    assert int(dut.wb_rdata_o.value) == 0x3C, "Clocked read returned wrong data"
+
+    dut.wb_cyc_i.value = 0
+    dut.wb_stb_i.value = 0
+
+    await RisingEdge(dut.clk)
 
 
 @cocotb.test()
