@@ -84,7 +84,7 @@ module wb_if (
   reg  [7:0] next_wr_data_lat;
 
 //--------------------------------------------------------------------
-// READ Instruction FSM
+// FSM
 // --------------------------------------------------------------------
 always @(*) begin
   // Defaults
@@ -221,7 +221,6 @@ end
       addr_o <= next_addr_o;
       bytes_left <= next_bytes_left;
 
-      // Read-only master
       we_o <= next_we_o;
       cyc_o <= next_cyc_o;
       stb_o <= next_stb_o;
