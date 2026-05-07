@@ -28,7 +28,7 @@ always @(*) begin
     case ({operand, opcode})
         8'b00000001,    // ADD Imp
         8'b00010001,    // SUB Imp
-        8'b10010001,    // ADD IMM
+        8'b10000001,    // ADD IMM
         8'b10010001:    // SUB IMM
         begin
             alu_control[5] <= 1;
