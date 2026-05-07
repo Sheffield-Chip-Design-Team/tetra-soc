@@ -2,7 +2,10 @@ import cocotb
 from random import randint
 from cocotb.triggers import Timer
 
+# ------------------------------------- #
 # Initialse uut/dut with default values
+# ------------------------------------- #
+
 async def initialise(uut):
 
   uut.instruction.value = 0
@@ -12,15 +15,12 @@ async def initialise(uut):
 
   instruction = int(uut.instruction.value)
   flags = int(uut.flags.value)
-  acc = int(uut.acc.value)
   alu_control = int(uut.alu_control.value)
-  result = int(uut.result.value)
-  overflow = int(uut.of_set.value)
+
   
   uut._log.info("Initial Values Set")
-  uut._log.info(f"Reg A: {reg_a}\tReg B: {reg_b}\tAcc: {acc}\ALU Control: {alu_control}\tResult: {result}\tOverflow: {overflow}")
-
-
+  uut._log.info(f"Instruction: {instruction:016b}\tFlags: {flags:04b}\tALU Control: {alu_control:06b}")
+ 
 # -------------------------
 # Test 1: ADD / SUB group
 # -------------------------
