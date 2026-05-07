@@ -6,7 +6,7 @@
 
 module sram_1rw #(
     parameter ADDR_WIDTH = 15,
-    parameter DATA_WIDTH = 8
+    parameter DATA_WIDTH = 16
 )(
     input  wire                   clk,
     input  wire [ADDR_WIDTH-1:0]  addr,
@@ -14,7 +14,7 @@ module sram_1rw #(
     input  wire                   we,
     output wire [DATA_WIDTH-1:0]  dout
 );
-    // 256-byte memory array
+    // Memory array
     reg [DATA_WIDTH-1:0] ram [0:(2**ADDR_WIDTH)-1];
 
     // Synchronous Write

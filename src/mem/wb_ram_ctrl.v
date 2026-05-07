@@ -5,8 +5,8 @@
 // =======================================================================
 
 module wb_ram_ctrl #(
-    parameter ADDR_WIDTH = 15,  // Adjust based on RAM size
-    parameter DATA_WIDTH = 8
+    parameter ADDR_WIDTH = 15,  //  RAM size
+    parameter DATA_WIDTH = 16
 )(
     // Wishbone Signals
     input  wire [31:0]           wb_adr_i, // 32-bit from memory map
