@@ -35,6 +35,8 @@ def alu_int(dut):
 async def setup_dut(dut):
     dut.instruction.value = 0
     dut.flags.value = 0
+    dut.alu_control.value = 0    # Resets ALU control value.
+    # Allows logic to propegate
     await Timer(10, unit="ns")
 
 # -------------------------
@@ -47,7 +49,13 @@ async def test_add_sub(dut):
 
     dut.instruction.value = 0x01    # Tests the case that the instruction is implicit add
     await Timer(5, unit="ns")      # Allows logic to propegate
-    dut._log.info(f"Add Imp: {dut.alu_control.value}")
+    #dut._log.info(f"Add Imp: {dut.alu_control.value}") replacing this line with the one below
+
+    assert dut.alu_control.value == get_expected(dut, 0b100100), (
+        f"Expected ALU control to be {hex(get_expected(dut, 0b100100))} for implicit add, but got {dut.alu_control.value}"
+    ) 
+    dut._log.info(f"ALU control check passed: Value is {hex(get_expected(dut, 0b100100))}  ")
+
 
     dut.instruction.value = 0x11    # Tests the case that the instruction is implicit sub
     await Timer(5, unit="ns")      # Allows logic to propegate
@@ -71,6 +79,8 @@ async def test_add_sub(dut):
 
 
 async def test_logical(dut):    
+    
+   
     dut._log.info("Starting logical (And Or XOR) control tests")
     # AND TESTS - Immediate and Implicit
     dut.instruction.value = 0x41    # Tests for implicit AND
@@ -101,6 +111,18 @@ async def test_logical(dut):
 
 
 
+def get_expected(dut, base_val):
+    expected = base_val
+    
+    # Check if bit [3] (Borrow) OR bit [2] (Carry) is high in the flags
+    if (dut.flags.value == 0b1100 or dut.flags.value == 0b1000 or dut.flags.value == 0b0100): 
+        # Set bit 4 of the alu_control (1 << 4 is 0x10 or 16)
+        expected |= (1 << 4)
+    else:
+        # Ensure bit 4 is 0 (optional if your base_val already has it at 0)
+        expected &= ~(1 << 4)
+        
+    return expected
 
 
 @cocotb.test()
@@ -140,7 +162,7 @@ async def test_default_case(dut):
     dut.flags.value = 0b1100
     await Timer(5, unit="ns")
     dut._log.info("Test 10: Default case -> flag -> Borrow and Carry set to high")
-    await test_logical(dut)     # Run test for logical operations with flags  
+    await test_logical(dut)     # Run test for logical operations with flags
 
 
 

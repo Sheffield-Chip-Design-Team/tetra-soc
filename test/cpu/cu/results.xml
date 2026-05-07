@@ -1,6 +1,8 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1778165798" />
-    <testcase name="test_default_case" classname="test_control_unit" file="/home/tcowie1/Git-Repos/tetra-soc/test/cpu/cu/test_control_unit.py" lineno="106" time="0.0057811737060546875" sim_time_ns="260.0" ratio_time="44973.56647970967" />
+    <property name="random_seed" value="1778182287" />
+    <testcase name="test_default_case" classname="test_control_unit" file="/home/tcowie1/Git-Repos/tetra-soc/test/cpu/cu/test_control_unit.py" lineno="128" time="0.006286144256591797" sim_time_ns="45.0" ratio_time="7158.601228855344">
+      <failure error_type="AssertionError" error_msg="Expected ALU control to be 0x34 for implicit add, but got 100100&#10;assert LogicArray('100100', Range(5, 'downto', 0)) == 52&#10; +  where LogicArray('100100', Range(5, 'downto', 0)) = LogicArrayObject(control_unit_wtb.alu_control).value&#10; +    where LogicArrayObject(control_unit_wtb.alu_control) = HierarchyObject(control_unit_wtb).alu_control&#10; +  and   52 = get_expected(HierarchyObject(control_unit_wtb), 36)" />
+    </testcase>
   </testsuite>
 </testsuites>
