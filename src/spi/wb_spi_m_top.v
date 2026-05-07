@@ -5,9 +5,9 @@
 //              Uses command 0x03 + 16-bit address.
 // =======================================================================
 
-// TODO - integrate the logic into THIS top module instead of instantiating a separate one,
+// TODO - integrate the logic into THIS top module instead of instantiating a separate one
 
-module wb_spi_mem_ctrl_wb (
+module wb_spi_m_top (
   input  wire        clk,
   input  wire        rst_n,
 
