@@ -1,5 +1,6 @@
 // Auto-generated Verilog Testbench Wrapper - Coraltb 
  
+
 `timescale 1ns/1ns 
 
 
@@ -17,4 +18,5 @@ control_unit dut (
   );
 
 endmodule 
+ 
  

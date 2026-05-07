@@ -1,21 +1,24 @@
 import cocotb
+from random import randint
 from cocotb.triggers import Timer
 
-# -------------------------
-# Helper functions
-# -------------------------
+# Initialse uut/dut with default values
+async def initialise(uut):
 
-def alu_int(dut):
-    return int(dut.alu_control.value)
+  uut.instruction.value = 0
+  uut.flags.value = 0
 
-async def settle():
-    # Matches your timing style: allow combinational logic to settle
-    await Timer(1, units="ns")
+  await Timer(5, unit="ns")
 
-async def setup_dut(dut):
-    dut.instruction.value = 0
-    dut.flags.value = 0
-    await settle()
+  instruction = int(uut.instruction.value)
+  flags = int(uut.flags.value)
+  acc = int(uut.acc.value)
+  alu_control = int(uut.alu_control.value)
+  result = int(uut.result.value)
+  overflow = int(uut.of_set.value)
+  
+  uut._log.info("Initial Values Set")
+  uut._log.info(f"Reg A: {reg_a}\tReg B: {reg_b}\tAcc: {acc}\ALU Control: {alu_control}\tResult: {result}\tOverflow: {overflow}")
 
 
 # -------------------------
