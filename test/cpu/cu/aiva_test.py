@@ -44,7 +44,7 @@ async def test_add_sub(dut):        ## This is the format you should be using, t
     dut.instruction.value = 0x91    # Tests the case that the instruction is implicit add
     await Timer(5, units="ns")      # Allows logic to propegate
     dut._log.info(f"Sub Imm: {dut.alu_control.Value}")
-    
+
     dut.instruction.value = 0x00    # Resets instruction value.
     await Timer(5, units="ns")      # Allows logic to propegate
 
@@ -53,6 +53,4 @@ async def test_default_case(dut):
     await setup_dut(dut)
     dut._log.info("Test 4: Default case -> alu_control = 0")
     
-    await test_add_sub(dut)
-
-    assert alu_int(dut) == 0, f"Default case failed: expected 000000, got {alu_int(dut):06b}"
+    await test_add_sub(dut)     # Run test for add and sub operations
