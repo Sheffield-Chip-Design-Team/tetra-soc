@@ -21,6 +21,8 @@ project:
     - "dig_top.v"
 
     # CPU
+    -  "cpu/cpu_top.v"
+    -  "cpu/wb_if.v"
     # - "cpu/alu.v"
     # - "cpu/control_unit.v"
     # - "cpu/cpu_top.v"
