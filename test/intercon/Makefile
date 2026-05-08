@@ -31,6 +31,11 @@ VERILOG_SOURCES += $(SRC_DIR)/spi/spi_mem_ctrl_core.v
 # SPI RAM behavioral model
 VERILOG_SOURCES += $(MODEL_DIR)/spi_ram_model.v
 
+# RAM memory subsystem
+VERILOG_SOURCES += $(SRC_DIR)/mem/sram_1rw.v
+VERILOG_SOURCES += $(SRC_DIR)/mem/wb_ram_ctrl.v
+VERILOG_SOURCES += $(SRC_DIR)/mem/memory_ss.v
+
 # Include paths for wishbone headers
 COMPILE_ARGS += -I$(SRC_DIR)/intercon
 
@@ -40,6 +45,6 @@ COMPILE_ARGS += -g2012
 endif
 
 TOPLEVEL := intercon_tb
-COCOTB_TEST_MODULES := test_intercon_spi
+COCOTB_TEST_MODULES := test_intercon_spi,test_intercon_ram
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

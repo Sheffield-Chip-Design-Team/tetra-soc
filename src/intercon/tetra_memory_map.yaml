@@ -27,6 +27,6 @@ parameters:
       datawidth : 8
 
     ram:
-      offset: 0x4000
-      size  : 0x4FFF
+      offset: 0x8000
+      size  : 0x1000
       datawidth : 8
