@@ -60,7 +60,7 @@ module intercon_tb;
   wire        wb_rom_rty_i = 1'b0;
 
   // -----------------------------
-  // RAM port (unused in this test)
+  // RAM port
   // -----------------------------
   wire [31:0] wb_ram_adr_o;
   wire  [7:0] wb_ram_dat_o;
@@ -154,7 +154,7 @@ module intercon_tb;
   wire spi_miso;
 
   // Adapt full Wishbone peripheral signals to the simple wb_spi_mem_ctrl port set
-  wb_spi_mem_ctrl_wb u_spi (
+  wb_spi_m_top u_spi (
     .clk            (sys_clk),
     .rst_n          (sys_rst_n),
 
@@ -179,7 +179,7 @@ module intercon_tb;
   );
 
   // SPI RAM behavioral model
-  spi_ram_model #(.MEM_BYTES(256)) u_spi_ram (
+  spi_ram_model #(.MEM_BYTES(256)) u_spi_flash_ram (
     .cs_n (spi_cs_n),
     .sck  (spi_sck),
     .mosi (spi_mosi),
@@ -192,7 +192,7 @@ module intercon_tb;
     // wait until after time 0 so hierarchical reference is valid
     #1;
     for (i = 0; i < 256; i = i + 1) begin
-      u_spi_ram.mem[i] = i[7:0];
+      u_spi_flash_ram.mem[i] = i[7:0];
     end
   end
 

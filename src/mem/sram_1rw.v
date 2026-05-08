@@ -30,15 +30,6 @@ module sram_1rw #(
 
     reg [DATA_WIDTH-1:0] mem [0:DEPTH-1];
 
-`ifndef SYNTHESIS
-    integer i;
-    initial begin
-        for (i = 0; i < DEPTH; i = i + 1) begin
-            mem[i] = {DATA_WIDTH{1'b0}};
-        end
-    end
-`endif
-
     always @(posedge clk) begin
         if (!rst_n) begin
             rdata <= {DATA_WIDTH{1'b0}};

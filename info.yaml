@@ -53,8 +53,9 @@ project:
     # - "uart/wb_uart.v"
 
     # # Memory
-    # - "mem/sram_1rw.v"
-    # - "mem/wb_ram_ctrl.v"
+    - "mem/sram_1rw.v"
+    - "mem/wb_ram_ctrl.v"
+    - "mem/memory_ss.v"
 
     # # DMA / IRQ
     # - "dma/wb_dma.v"
