@@ -77,10 +77,34 @@ module intercon_tb;
   wire        wb_ram_stb_o;
   wire  [2:0] wb_ram_cti_o;
   wire  [1:0] wb_ram_bte_o;
-  wire  [7:0] wb_ram_rdt_i = 8'h00;
-  wire        wb_ram_ack_i = 1'b0;
-  wire        wb_ram_err_i = 1'b0;
-  wire        wb_ram_rty_i = 1'b0;
+  wire  [7:0] wb_ram_rdt_i;
+  wire        wb_ram_ack_i;
+  wire        wb_ram_err_i;
+  wire        wb_ram_rty_i;
+
+  // RAM subsystem connected to the interconnect RAM port
+  memory_ss #(
+    .DATA_WIDTH(8),
+    .RAM_ADDR_WIDTH(12),
+    .WB_ADDR_WIDTH(32)
+  ) u_memory_ss (
+    .clk        (sys_clk),
+    .rst_n      (sys_rst_n),
+
+    .wb_adr_i   (wb_ram_adr_o),
+    .wb_dat_i   (wb_ram_dat_o),
+    .wb_sel_i   (wb_ram_sel_o),
+    .wb_we_i    (wb_ram_we_o),
+    .wb_cyc_i   (wb_ram_cyc_o),
+    .wb_stb_i   (wb_ram_stb_o),
+    .wb_cti_i   (wb_ram_cti_o),
+    .wb_bte_i   (wb_ram_bte_o),
+
+    .wb_rdt_o   (wb_ram_rdt_i),
+    .wb_ack_o   (wb_ram_ack_i),
+    .wb_err_o   (wb_ram_err_i),
+    .wb_rty_o   (wb_ram_rty_i)
+  );
 
   // --------------------------------
   // EXT flash port (unused in this test)
