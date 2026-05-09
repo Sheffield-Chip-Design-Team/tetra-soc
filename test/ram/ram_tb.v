@@ -17,17 +17,18 @@ module ram_tb;
     wire        wb_err_o;
 
     wire        ram_we_o;
-    wire [7:0]  ram_addr_o;
+    wire [9:0]  ram_addr_o;
     wire [7:0]  ram_wdata_o;
-    wire [7:0]  ram_rdata_i;
+    wire [7:0]  ram_rdata_o;
 
     wb_ram_ctrl #(
         .DATA_WIDTH(8),
-        .RAM_ADDR_WIDTH(8),
+        .RAM_ADDR_WIDTH(10),
         .WB_ADDR_WIDTH(16)
     ) dut (
         .clk         (clk),
         .rst_n       (rst_n),
+
         .wb_addr_i   (wb_addr_i),
         .wb_wdata_i  (wb_wdata_i),
         .wb_rdata_o  (wb_rdata_o),
@@ -42,19 +43,19 @@ module ram_tb;
         .ram_we_o    (ram_we_o),
         .ram_addr_o  (ram_addr_o),
         .ram_wdata_o (ram_wdata_o),
-        .ram_rdata_i (ram_rdata_i)
+        .ram_rdata_i (ram_rdata_o)
     );
 
-    sram_1rw #(
+    sram_macro_wrapper #(
         .DATA_WIDTH(8),
-        .ADDR_WIDTH(8)
-    ) u_sram_1rw (
+        .ADDR_WIDTH(10)
+    ) u_ram (
         .clk   (clk),
         .rst_n (rst_n),
         .we    (ram_we_o),
         .addr  (ram_addr_o),
         .wdata (ram_wdata_o),
-        .rdata (ram_rdata_i)
+        .rdata (ram_rdata_o)
     );
 
     initial begin

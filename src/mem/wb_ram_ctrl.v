@@ -25,7 +25,7 @@
 
 module wb_ram_ctrl #(
     parameter DATA_WIDTH     = 8,
-    parameter RAM_ADDR_WIDTH = 8,
+    parameter RAM_ADDR_WIDTH = 10,
     parameter WB_ADDR_WIDTH  = 16
 )(
     input  wire                       clk,
