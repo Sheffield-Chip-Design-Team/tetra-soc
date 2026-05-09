@@ -149,7 +149,7 @@ assign wb_ram_sel_o       = wb_resize_ram_sel;
 wb_mux
   #(.num_devices (5),
     .MATCH_ADDR  ({32'h00004000, 32'h00008000, 32'h00002000, 32'h00000000, 32'h00000020}),
-    .MATCH_MASK  ({32'hfffffff0, 32'hfffff000, 32'hffffd001, 32'hffffffe0, 32'hffffffe0}))
+    .MATCH_MASK  ({32'hfffffff0, 32'hfffffc00, 32'hffffd001, 32'hffffffe0, 32'hffffffe0}))
  wb_mux_cpu
    (.wb_clk_i  (wb_clk_i),
     .wb_rst_i  (wb_rst_i),
