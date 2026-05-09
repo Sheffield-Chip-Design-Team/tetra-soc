@@ -259,7 +259,7 @@ async def test_multiple_addresses(dut):
         0x0001: 0x34,
         0x007F: 0x56,
         0x0080: 0x78,
-        0x00FF: 0x9A,
+        0x03FF: 0x9A,
     }
 
     for addr, data in test_vectors.items():
@@ -310,7 +310,7 @@ async def test_out_of_range_read_error(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset_dut(dut)
 
-    await wb_invalid_access(dut, 0x0100, write=False)
+    await wb_invalid_access(dut, 0x0400, write=False)
 
 
 @cocotb.test()
@@ -319,7 +319,7 @@ async def test_out_of_range_write_error_and_no_wrap(dut):
     await reset_dut(dut)
 
     await wb_write(dut, 0x0000, 0x55)
-    await wb_invalid_access(dut, 0x0100, write=True, data=0xAA)
+    await wb_invalid_access(dut, 0x0400, write=True, data=0xAA)
 
     got = await wb_read(dut, 0x0000)
     assert got == 0x55, (
