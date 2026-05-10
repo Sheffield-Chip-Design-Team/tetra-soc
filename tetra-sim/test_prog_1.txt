@@ -1,0 +1,5 @@
+label.start
+MAIN P 0x01f
+REG1 M 0x001
+label.end
+NOP
