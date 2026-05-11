@@ -1,5 +1,8 @@
-label.start
-MAIN P 0x01f
-REG1 M 0x001
-label.end
-NOP
+START:	NOP
+	NOP
+	NOP
+	JMP	START
+END:	NOP
+	NOP
+	NOP
+	HALT

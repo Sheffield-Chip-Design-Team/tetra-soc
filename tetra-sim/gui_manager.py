@@ -1,10 +1,12 @@
 ### GUI Manager for Tetra Simulator
 import PySimpleGUI as sg
-from io_manager import save_program, load_program, simulate_program
+from io_manager import *
+from simulator import full_program_parsing, update_clock, single_cycle_execution
 
 # Defines the GUI layout and event loop for the Tetra Simulator.
 # Responsible for creating the main window, handling user interactions, and updating the display based on the simulation state.
 # Uses PySimpleGUI.
+
 def create_layout():
     """Return the main window layout for the simulator GUI."""
     left_column = [
@@ -26,15 +28,14 @@ def create_layout():
              sg.Slider(range=(1, 10), default_value=5, orientation='h', size=(18, 15), key='clock_speed', enable_events=True),
              sg.Text('5 Hz', key='clock_speed_label')],
 
-            [sg.Button('Pause', size=(10, 1), key='pause_clock'),
+            [sg.Button('Start', size=(10, 1), key='pause_clock'),
              sg.Button('Step',size=(10, 1), key='step_clock'),
-             sg.Text('Cycle:', pad=((10, 0), 0)),
-             sg.Text('0', key='cycle_count', size=(6, 1))]
+             sg.Button('Reset', size=(10, 1), key='reset_clock')]
 
         ], pad=(5, 5), element_justification='left')],
         [sg.Button('Save', size=(11, 1)),
          sg.Button('Load', size=(10, 1)),
-         sg.Button('Simulate', size=(11, 1))]
+         sg.Button('Parse', size=(11, 1))]
     ]
 
     center_column = [ # Block diagram and register states
@@ -72,25 +73,20 @@ def create_window():
     """Create and return the main PySimpleGUI window."""
     return sg.Window('Simulator', create_layout(), resizable=True, finalize=True)
 
-def update_line_numbers(window, gutter):
-    pgml = window['program_input']
-
-    first = int(pgml.Widget.index("@0,0").split('.')[0])      # top visible line
-    height = int(pgml.Widget['height'])                       # visible rows
-    total = int(pgml.Widget.index('end-1c').split('.')[0])    # total lines
-    last = min(first + height - 1, total)                     # bottom visible line
-
-    line_numbers = "\n".join(str(i) for i in range(first, last + 1))
-
-    gutter.config(state='normal')
-    gutter.delete('1.0', 'end')
-    gutter.insert('1.0', line_numbers)
-    gutter.config(state='disabled')
-
 def onScroll(window, pgml, gutter, *args):
     pgml.widget.yview(*args)
     gutter.yview(*args)
     update_line_numbers(window, gutter)
+
+def update_registers(window, reg_a, reg_b, accum, status_reg, memory):
+    """Update the register display in the GUI."""
+    window['reg_a'].update(f"{reg_a:04b} ({reg_a})")
+    window['reg_b'].update(f"{reg_b:04b} ({reg_b})")
+    window['accum'].update(f"{accum:04b} ({accum})")
+    window['status_reg'].update(' '.join(str(bit) for bit in status_reg))
+    window['status_reg_state'].update(
+        f"V:{status_reg[0]} C:{status_reg[1]} Z:{status_reg[2]} N:{status_reg[3]}"
+    )
 
 def run_event_loop():
     """Run the main event loop for the GUI."""
@@ -100,6 +96,16 @@ def run_event_loop():
     cycle_count = 0
     clock_speed = 5
     timeout = int(max(10, 1000 / clock_speed))
+    
+    next_address = 0
+    next_inst = None
+    reg_a = 0
+    reg_b = 0
+    accum = 0
+    status_reg = [0, 0, 0, 0, 0, 0]
+    memory = [0] * 1024
+    
+    parsed = False
 
     # Always update line numbers to stay in sync
     pgml = window['program_input']
@@ -125,36 +131,60 @@ def run_event_loop():
         if event == sg.WIN_CLOSED or event == 'Cancel':
             break
 
-        program_text = values['program_input']
-        update_line_numbers(window, gutter)
-
         if event == 'program_input':
             update_line_numbers(window, gutter)
 
         if event == sg.TIMEOUT_EVENT:
             if clock_running:
-                clock_phase = not clock_phase
-                state_text = 'HIGH' if clock_phase else 'LOW'
-                bg_color = 'green' if clock_phase else 'black'
-                window['clock_state'].update(state_text, background_color=bg_color)
-                if clock_phase:
-                    cycle_count += 1
-                    window['cycle_count'].update(str(cycle_count))
+                clock_phase, cycle_count = update_clock(window, clock_phase, cycle_count)
+                if clock_phase:  # Only update on rising edge
+                    try:
+                        next_address, reg_a, reg_b, accum, status_reg, memory = single_cycle_execution(window, next_inst, reg_a, reg_b, accum, status_reg, memory)
+                        next_inst = next(row for row in resolved_program if row[0] == next_address)
+                        update_registers(window, reg_a, reg_b, accum, status_reg, memory)
+                    except Exception as e:
+                        sg.popup_error(f"Error during execution: {e}")
             continue
 
         if event == 'pause_clock':
-            clock_running = not clock_running
-            window['pause_clock'].update('Resume' if not clock_running else 'Pause')
-
+            if clock_running:
+                clock_running = toggle_clock(window, clock_running)
+            else:
+                if not parsed:
+                    sg.popup_error("Please parse the program before starting the clock.")
+                else:
+                    clock_running = toggle_clock(window, clock_running)
+                    
         elif event == 'step_clock':
             if not clock_running:
-                clock_phase = not clock_phase
-                state_text = 'HIGH' if clock_phase else 'LOW'
-                bg_color = 'green' if clock_phase else 'black'
-                window['clock_state'].update(state_text, background_color=bg_color)
-                if clock_phase:
-                    cycle_count += 1
-                    window['cycle_count'].update(str(cycle_count))
+                if parsed:
+                    clock_phase, cycle_count = update_clock(window, clock_phase, cycle_count)
+                    if clock_phase:  # Only execute on rising edge
+                        try:
+                            next_address, reg_a, reg_b, accum, status_reg, memory = single_cycle_execution(window, next_inst, reg_a, reg_b, accum, status_reg, memory)
+                            next_inst = resolved_program[next_address] if next_address < len(resolved_program) else None
+                            update_registers(window, reg_a, reg_b, accum, status_reg, memory)
+                        except Exception as e:
+                            sg.popup_error(f"Error during execution: {e}")
+                else:
+                    sg.popup_error("Please parse the program before stepping through the clock.")
+                
+        elif event == 'reset_clock':
+            clock_running = False
+            clock_phase = False
+            cycle_count = 0
+            next_address = 0
+            reg_a = 0
+            reg_b = 0
+            accum = 0
+            status_reg = [0, 0, 0, 0, 0]
+            parsed = False
+            resolved_program = None
+            
+            window['clock_state'].update('LOW', background_color='black')
+            window['cycle_count'].update(str(cycle_count))
+            window['pause_clock'].update('Start')
+            window['program_input'].Disabled = False  # Re-enable editing on reset
 
         elif event == 'clock_speed':
             clock_speed = int(values['clock_speed'])
@@ -162,25 +192,19 @@ def run_event_loop():
             window['clock_speed_label'].update(f'{clock_speed} Hz')
 
         elif event == 'Save':
-            save_program(program_text)
+            save_program(pgml.get())
         elif event == 'Load':
             load_program(window)
 
-        elif event == 'Simulate':
-            result = simulate_program(program_text)
-            labels = result['labels']
-            errors = result.get('errors', [])
-            parsed_ok = result.get('labels_parsed_ok', False)
+        elif event == 'Parse':
+            try:
+                resolved_program = full_program_parsing(window)
+                next_inst = resolved_program[0]
+                sg.popup('Program parsed successfully!')
+                parsed = True
+                window['program_input'].Disabled = True  # Disable editing after parsing
+            except Exception as e:
+                sg.popup_error(f"Error during parsing: {e}")
 
-            if errors:
-                window['ram_list'].update('')
-                sg.popup_error('\n'.join(errors))
-            elif not parsed_ok:
-                window['ram_list'].update('')
-                sg.popup_error('Label parsing failed.')
-            else:
-                ram_content = '\n'.join([f"{name}: 0x{addr:03X} = 0" for name, addr in labels.items()])
-                window['ram_list'].update(ram_content)
-                sg.popup('Simulation started successfully!')
 
     window.close()
